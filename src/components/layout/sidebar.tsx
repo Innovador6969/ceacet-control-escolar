@@ -7,6 +7,7 @@ import {
   FileText,
   Home,
   Landmark,
+  Layers3,
   PlusCircle,
   Settings,
   UsersRound
@@ -19,6 +20,7 @@ const navigation = [
   { href: "/registrar-alumno", label: "Registrar alumno", icon: PlusCircle },
   { href: "/pagos", label: "Pagos", icon: Landmark },
   { href: "/calendario-academico", label: "Calendario academico", icon: CalendarDays },
+  { href: "/configuracion-academica/grupos", label: "Grupos", icon: Layers3 },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/configuracion", label: "Configuracion", icon: Settings }

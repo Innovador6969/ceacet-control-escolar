@@ -1,4 +1,5 @@
 import { Settings } from "lucide-react";
+import Link from "next/link";
 import { ComingSoonSection } from "@/components/sections/coming-soon-section";
 import { requireUser } from "@/lib/auth/session";
 
@@ -6,16 +7,24 @@ export default async function SettingsPage() {
   await requireUser();
 
   return (
-    <ComingSoonSection
-      eyebrow="Configuracion"
-      title="Parametros del sistema"
-      description="Base para administrar usuarios, grupos, conceptos de cobro, modalidades, documentos requeridos y preferencias operativas."
-      icon={Settings}
-      items={[
-        "Usuarios y permisos",
-        "Grupos y modalidades",
-        "Conceptos de cobro"
-      ]}
-    />
+    <div className="space-y-5">
+      <ComingSoonSection
+        eyebrow="Configuracion"
+        title="Parametros del sistema"
+        description="Base para administrar usuarios, grupos, conceptos de cobro, modalidades, documentos requeridos y preferencias operativas."
+        icon={Settings}
+        items={[
+          "Usuarios y permisos",
+          "Grupos y modalidades",
+          "Conceptos de cobro"
+        ]}
+      />
+      <Link
+        href="/configuracion-academica/grupos"
+        className="focus-ring inline-flex h-11 items-center rounded-lg bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
+      >
+        Administrar grupos
+      </Link>
+    </div>
   );
 }
