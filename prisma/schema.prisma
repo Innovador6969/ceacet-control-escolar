@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGEMENT
+  CASHIER
+  SCHOOL_CONTROL
+  READ_ONLY
+}
+
+enum Sex {
+  FEMALE
+  MALE
+  OTHER
+  NOT_SPECIFIED
+}
+
+enum AdministrativeStatus {
+  ACTIVE
+  CURRENT
+  WITH_DEBT
+  TEMPORARY_LEAVE
+  GRADUATED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum DocumentStatus {
+  PENDING
+  RECEIVED
+  REVIEW
+  REJECTED
+}
+
+enum ChargeStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  APPLIED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  OTHER
+}
+
+enum FollowUpType {
+  ACADEMIC
+  PAYMENT
+  DOCUMENT
+  ADMINISTRATIVE
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(READ_ONLY)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  payments     Payment[]
+  followUps    FollowUp[]
+  auditLogs    AuditLog[]
+
+  @@index([role])
+}
+
+model Student {
+  id                   String               @id @default(uuid())
+  enrollmentNumber     String               @unique
+  firstName            String
+  paternalLastName     String
+  maternalLastName     String?
+  birthDate            DateTime?
+  curp                 String?              @unique
+  sex                  Sex?
+  maritalStatus        String?
+  occupation           String?
+  phone                String?
+  email                String?
+  street               String?
+  neighborhood         String?
+  city                 String?
+  state                String?
+  postalCode           String?
+  administrativeStatus AdministrativeStatus @default(ACTIVE)
+  observations         String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  enrollments          Enrollment[]
+  documents            StudentDocument[]
+  payments             Payment[]
+  followUps            FollowUp[]
+
+  @@index([paternalLastName, maternalLastName, firstName])
+  @@index([administrativeStatus])
+}
+
+model Enrollment {
+  id                 String           @id @default(uuid())
+  studentId          String
+  academicLevelId    String
+  modalityId         String
+  groupId            String?
+  grade              String?
+  fourMonthPeriod    Int?
+  enrollmentDate     DateTime
+  startDate          DateTime?
+  endDate            DateTime?
+  registrationFee    Decimal          @default(0) @db.Decimal(10, 2)
+  weeklyFee          Decimal          @default(0) @db.Decimal(10, 2)
+  lateFeePercentage  Decimal          @default(0) @db.Decimal(5, 2)
+  paymentDay         Int?
+  status             EnrollmentStatus @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  student            Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicLevel      AcademicLevel    @relation(fields: [academicLevelId], references: [id])
+  modality           Modality         @relation(fields: [modalityId], references: [id])
+  group              Group?           @relation(fields: [groupId], references: [id])
+  charges            Charge[]
+
+  @@index([studentId])
+  @@index([academicLevelId, modalityId, groupId])
+  @@index([status])
+}
+
+model AcademicLevel {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  active      Boolean      @default(true)
+  modalities  Modality[]
+  groups      Group[]
+  enrollments Enrollment[]
+}
+
+model Modality {
+  id              String        @id @default(uuid())
+  academicLevelId String
+  name            String
+  code            String        @unique
+  active          Boolean       @default(true)
+  academicLevel   AcademicLevel @relation(fields: [academicLevelId], references: [id])
+  groups          Group[]
+  enrollments     Enrollment[]
+
+  @@index([academicLevelId])
+}
+
+model Group {
+  id              String        @id @default(uuid())
+  name            String
+  academicLevelId String
+  modalityId      String
+  schedule        String?
+  capacity        Int?
+  active          Boolean       @default(true)
+  academicLevel   AcademicLevel @relation(fields: [academicLevelId], references: [id])
+  modality        Modality      @relation(fields: [modalityId], references: [id])
+  enrollments     Enrollment[]
+
+  @@index([academicLevelId, modalityId])
+}
+
+model DocumentType {
+  id        String            @id @default(uuid())
+  name      String
+  required  Boolean           @default(true)
+  active    Boolean           @default(true)
+  documents StudentDocument[]
+}
+
+model StudentDocument {
+  id               String         @id @default(uuid())
+  studentId        String
+  documentTypeId   String
+  status           DocumentStatus @default(PENDING)
+  physicalLocation String?
+  fileUrl          String?
+  receivedAt       DateTime?
+  observations     String?
+  student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  documentType     DocumentType   @relation(fields: [documentTypeId], references: [id])
+
+  @@unique([studentId, documentTypeId])
+  @@index([status])
+}
+
+model ChargeConcept {
+  id            String   @id @default(uuid())
+  name          String
+  code          String   @unique
+  defaultAmount Decimal  @default(0) @db.Decimal(10, 2)
+  active        Boolean  @default(true)
+  charges       Charge[]
+}
+
+model Charge {
+  id               String               @id @default(uuid())
+  enrollmentId     String
+  chargeConceptId  String
+  dueDate          DateTime
+  baseAmount       Decimal              @db.Decimal(10, 2)
+  surchargeAmount  Decimal              @default(0) @db.Decimal(10, 2)
+  discountAmount   Decimal              @default(0) @db.Decimal(10, 2)
+  balance          Decimal              @db.Decimal(10, 2)
+  status           ChargeStatus         @default(PENDING)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  enrollment       Enrollment           @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  chargeConcept    ChargeConcept        @relation(fields: [chargeConceptId], references: [id])
+  paymentApplications PaymentApplication[]
+
+  @@index([enrollmentId])
+  @@index([dueDate, status])
+}
+
+model Payment {
+  id                  String               @id @default(uuid())
+  studentId           String
+  amount              Decimal              @db.Decimal(10, 2)
+  paymentMethod       PaymentMethod        @default(CASH)
+  reference           String?
+  paidAt              DateTime
+  status              PaymentStatus        @default(APPLIED)
+  createdById         String?
+  createdAt           DateTime             @default(now())
+  student             Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy           User?                @relation(fields: [createdById], references: [id])
+  applications        PaymentApplication[]
+  receipt             Receipt?
+
+  @@index([studentId])
+  @@index([paidAt])
+}
+
+model PaymentApplication {
+  id        String  @id @default(uuid())
+  paymentId String
+  chargeId  String
+  amount    Decimal @db.Decimal(10, 2)
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  charge    Charge  @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, chargeId])
+}
+
+model Receipt {
+  id        String   @id @default(uuid())
+  paymentId String   @unique
+  folio     String   @unique
+  pdfUrl    String?
+  createdAt DateTime @default(now())
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+model FollowUp {
+  id             String       @id @default(uuid())
+  studentId      String
+  type           FollowUpType
+  description    String
+  nextFollowUpAt DateTime?
+  createdById    String?
+  createdAt      DateTime     @default(now())
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy      User?        @relation(fields: [createdById], references: [id])
+
+  @@index([studentId, type])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String
+  entity       String
+  entityId     String
+  previousData Json?
+  newData      Json?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
