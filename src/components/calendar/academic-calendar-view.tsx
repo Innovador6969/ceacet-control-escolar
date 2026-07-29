@@ -11,6 +11,7 @@ type EventRow = {
   type: string;
   startsAt: string;
   endsAt: string;
+  groupId: string;
   group: string;
   subject: string;
   teacher: string;
@@ -23,6 +24,7 @@ type OccurrenceRow = {
   date: string;
   startTime: string;
   endTime: string;
+  groupId: string;
   group: string;
   teacher: string;
   schoolCycle: string;
@@ -42,6 +44,10 @@ const views = [
   { id: "week", label: "Semana", icon: Rows3 },
   { id: "list", label: "Lista", icon: List }
 ];
+
+function uniqueOptions(options: string[]) {
+  return Array.from(new Set(options));
+}
 
 export function AcademicCalendarView({
   events,
@@ -73,6 +79,7 @@ export function AcademicCalendarView({
         type: occurrence.type,
         date: occurrence.date,
         time: `${occurrence.startTime} - ${occurrence.endTime}`,
+        groupId: occurrence.groupId,
         group: occurrence.group,
         teacher: occurrence.teacher,
         schoolCycle: occurrence.schoolCycle,
@@ -85,7 +92,7 @@ export function AcademicCalendarView({
   const filtered = combined.filter(
     (item) =>
       (filters.cycle === "Todos" || item.schoolCycle === filters.cycle) &&
-      (filters.group === "Todos" || item.group === filters.group) &&
+      (filters.group === "Todos" || item.groupId === filters.group) &&
       (filters.teacher === "Todos" || item.teacher === filters.teacher) &&
       (filters.subject === "Todos" || item.subject === filters.subject) &&
       (filters.type === "Todos" || item.type === filters.type)
@@ -116,7 +123,6 @@ export function AcademicCalendarView({
       <section className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-sm md:grid-cols-2 xl:grid-cols-5">
         {[
           ["cycle", "Ciclo escolar", schoolCycles.map((item) => item.name)],
-          ["group", "Grupo", groups.map((item) => item.name)],
           ["teacher", "Docente", teachers.map((item) => item.name)],
           ["subject", "Materia", subjects.map((item) => item.name)],
           [
@@ -134,20 +140,37 @@ export function AcademicCalendarView({
               "OTHER"
             ]
           ]
-        ].map(([key, label, options]) => (
+        ].map(([key, label, options]) => {
+          const filterKey = String(key);
+
+          return (
           <select
-            key={String(key)}
-            value={filters[key as keyof typeof filters]}
-            onChange={(event) => setFilters({ ...filters, [key as string]: event.target.value })}
+            key={filterKey}
+            value={filters[filterKey as keyof typeof filters]}
+            onChange={(event) => setFilters({ ...filters, [filterKey]: event.target.value })}
             className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
             aria-label={String(label)}
           >
             <option>Todos</option>
-            {(options as string[]).map((option) => (
-              <option key={option}>{option}</option>
+            {uniqueOptions(options as string[]).map((option) => (
+              <option key={`${filterKey}-${option}`}>{option}</option>
             ))}
           </select>
-        ))}
+          );
+        })}
+        <select
+          value={filters.group}
+          onChange={(event) => setFilters({ ...filters, group: event.target.value })}
+          className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+          aria-label="Grupo"
+        >
+          <option value="Todos">Todos</option>
+          {groups.map((group) => (
+            <option key={`group-${group.id}`} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </select>
       </section>
 
       <section

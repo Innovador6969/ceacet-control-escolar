@@ -1,5 +1,6 @@
 import { PaymentsTabs } from "@/components/payments/payments-tabs";
 import { requireUser } from "@/lib/auth/session";
+import { formatGroupLabel } from "@/lib/labels";
 import { getReEnrollmentModuleData } from "@/lib/services/reenrollments";
 
 export default async function PaymentsPage() {
@@ -25,7 +26,8 @@ export default async function PaymentsPage() {
           schoolCycle: item.schoolCycle.name,
           academicPeriod: item.academicPeriod?.name ?? "Sin periodo",
           program: item.modality.name,
-          group: item.group?.name ?? "Sin grupo",
+          groupId: item.group?.id ?? "",
+          group: item.group ? formatGroupLabel(item.group) : "Sin grupo",
           status: item.status,
           dueDate: item.dueDate.toISOString().slice(0, 10),
           amount: Number(item.charge.baseAmount),
@@ -52,7 +54,10 @@ export default async function PaymentsPage() {
           id: modality.id,
           name: modality.name
         }))}
-        groups={data.groups.map((group) => ({ id: group.id, name: group.name }))}
+        groups={data.groups.map((group) => ({
+          id: group.id,
+          name: formatGroupLabel(group)
+        }))}
       />
     </div>
   );

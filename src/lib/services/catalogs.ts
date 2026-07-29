@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getActiveGroups } from "@/lib/services/groups";
 
 export async function getCatalogs() {
   const [academicLevels, modalities, groups] = await Promise.all([
@@ -11,11 +12,7 @@ export async function getCatalogs() {
       include: { academicLevel: true },
       orderBy: { name: "asc" }
     }),
-    prisma.group.findMany({
-      where: { active: true },
-      include: { academicLevel: true, modality: true },
-      orderBy: { name: "asc" }
-    })
+    getActiveGroups()
   ]);
 
   return { academicLevels, modalities, groups };

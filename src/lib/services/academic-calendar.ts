@@ -1,5 +1,7 @@
 import { AcademicEventType, Prisma, Weekday } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { formatGroupLabel } from "@/lib/labels";
+import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
 import {
   academicAssignmentSchema,
   academicPeriodSchema,
@@ -89,7 +91,7 @@ export async function getCalendarModuleData() {
     prisma.academicPeriod.findMany({ include: { schoolCycle: true }, orderBy: { startDate: "desc" } }),
     prisma.academicLevel.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.modality.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.group.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    getActiveGroups(),
     prisma.subject.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.teacher.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.classroom.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
@@ -97,7 +99,7 @@ export async function getCalendarModuleData() {
       include: {
         schoolCycle: true,
         academicPeriod: { include: { schoolCycle: true } },
-        group: true,
+        group: { select: groupLabelSelect },
         subject: true,
         teacher: true,
         classroom: true
@@ -108,7 +110,7 @@ export async function getCalendarModuleData() {
     prisma.academicAssignment.findMany({
       include: {
         subject: true,
-        group: true,
+        group: { select: groupLabelSelect },
         teacher: true,
         classroom: true,
         academicPeriod: { include: { schoolCycle: true } },
@@ -137,7 +139,12 @@ export function buildScheduleOccurrences(
   assignments: Array<{
     id: string;
     subject: { name: string };
-    group: { name: string };
+    group: {
+      id: string;
+      name: string;
+      academicLevel: { id: string; name: string };
+      modality: { id: string; name: string };
+    };
     teacher: { name: string };
     classroom: { name: string } | null;
     academicPeriod: { schoolCycle: { name: string } };
@@ -173,7 +180,8 @@ export function buildScheduleOccurrences(
           id: `${rule.id}-${cursor.toISOString().slice(0, 10)}`,
           assignmentId: assignment.id,
           title: assignment.subject.name,
-          group: assignment.group.name,
+          groupId: assignment.group.id,
+          group: formatGroupLabel(assignment.group),
           teacher: assignment.teacher.name,
           classroom: assignment.classroom?.name ?? "Sin aula",
           schoolCycle: assignment.academicPeriod.schoolCycle.name,

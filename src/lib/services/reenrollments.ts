@@ -6,6 +6,7 @@ import {
   ReEnrollmentStatus
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
 import {
   reEnrollmentCreateSchema,
   reEnrollmentPaymentSchema,
@@ -138,7 +139,7 @@ export async function getReEnrollmentModuleData() {
         academicPeriod: true,
         academicLevel: true,
         modality: true,
-        group: true,
+        group: { select: groupLabelSelect },
         charge: { include: { paymentApplications: true } }
       },
       orderBy: { createdAt: "desc" }
@@ -154,7 +155,7 @@ export async function getReEnrollmentModuleData() {
     }),
     prisma.academicLevel.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.modality.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.group.findMany({ where: { active: true }, orderBy: { name: "asc" } })
+    getActiveGroups()
   ]);
 
   return {

@@ -8,7 +8,7 @@ import {
   getStudentBalance,
   getStudents
 } from "@/lib/services/students";
-import { administrativeStatusLabels } from "@/lib/labels";
+import { administrativeStatusLabels, formatGroupLabel } from "@/lib/labels";
 
 export default async function StudentsPage() {
   await requireUser();
@@ -24,7 +24,8 @@ export default async function StudentsPage() {
       enrollmentNumber: student.enrollmentNumber,
       academicLevel: enrollment?.academicLevel.name ?? "Sin nivel",
       modality: enrollment?.modality.name ?? "Sin modalidad",
-      group: enrollment?.group?.name ?? "Sin grupo",
+      groupId: enrollment?.group?.id ?? "",
+      group: enrollment?.group ? formatGroupLabel(enrollment.group) : "Sin grupo",
       phone: student.phone ?? "",
       paymentStatus: balance > 0 ? "Con adeudo" : "Al corriente",
       documentStatus: missingDocuments > 0 ? "Incompleto" : "Completo",
@@ -36,7 +37,14 @@ export default async function StudentsPage() {
 
   const levels = Array.from(new Set(rows.map((row) => row.academicLevel)));
   const modalities = Array.from(new Set(rows.map((row) => row.modality)));
-  const groups = Array.from(new Set(rows.map((row) => row.group)));
+  const groups = rows.reduce<Array<{ id: string; name: string }>>((options, row) => {
+    if (!row.groupId || options.some((option) => option.id === row.groupId)) {
+      return options;
+    }
+
+    options.push({ id: row.groupId, name: row.group });
+    return options;
+  }, []);
   const statuses = Array.from(
     new Set(rows.map((row) => row.administrativeStatus))
   );

@@ -14,6 +14,7 @@ type ReEnrollmentRow = {
   schoolCycle: string;
   academicPeriod: string;
   program: string;
+  groupId: string;
   group: string;
   status: string;
   dueDate: string;
@@ -75,13 +76,26 @@ export function PaymentsTabs({
           matchesStudent &&
           (filters.cycle === "Todos" || row.schoolCycle === filters.cycle) &&
           (filters.program === "Todos" || row.program === filters.program) &&
-          (filters.group === "Todos" || row.group === filters.group) &&
+          (filters.group === "Todos" || row.groupId === filters.group) &&
           (filters.status === "Todos" || row.status === filters.status) &&
           (!filters.dueDate || row.dueDate <= filters.dueDate)
         );
       }),
     [filters, rows]
   );
+
+  const groupFilterOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [];
+    const seen = new Set<string>();
+
+    for (const row of rows) {
+      if (!row.groupId || seen.has(row.groupId)) continue;
+      seen.add(row.groupId);
+      options.push({ value: row.groupId, label: row.group });
+    }
+
+    return options;
+  }, [rows]);
 
   async function createReEnrollment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -255,9 +269,7 @@ export function PaymentsTabs({
             />
             {[
               ["cycle", "Ciclo", Array.from(new Set(rows.map((row) => row.schoolCycle)))],
-              ["program", "Programa", Array.from(new Set(rows.map((row) => row.program)))],
-              ["group", "Grupo", Array.from(new Set(rows.map((row) => row.group)))],
-              ["status", "Estado", ["DRAFT", "PENDING", "PARTIAL", "PAID", "OVERDUE", "WAIVED", "CANCELLED"]]
+              ["program", "Programa", Array.from(new Set(rows.map((row) => row.program)))]
             ].map(([key, , options]) => (
               <select
                 key={String(key)}
@@ -267,10 +279,34 @@ export function PaymentsTabs({
               >
                 <option>{key === "program" ? "Todos" : key === "status" ? "Todos" : "Todos"}</option>
                 {(options as string[]).map((option) => (
-                  <option key={option}>{option}</option>
+                  <option key={`${String(key)}-${option}`}>{option}</option>
                 ))}
               </select>
             ))}
+            <select
+              value={filters.group}
+              onChange={(event) => setFilters({ ...filters, group: event.target.value })}
+              className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+            >
+              <option value="Todos">Todos</option>
+              {groupFilterOptions.map((option) => (
+                <option key={`group-${option.value}`} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filters.status}
+              onChange={(event) => setFilters({ ...filters, status: event.target.value })}
+              className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+            >
+              <option value="Todos">Todos</option>
+              {["DRAFT", "PENDING", "PARTIAL", "PAID", "OVERDUE", "WAIVED", "CANCELLED"].map((status) => (
+                <option key={`status-${status}`} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
             <input
               value={filters.dueDate}
               onChange={(event) => setFilters({ ...filters, dueDate: event.target.value })}

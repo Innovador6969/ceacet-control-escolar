@@ -1,6 +1,5 @@
 import {
   AdministrativeStatus,
-  ChargeStatus,
   DocumentStatus,
   Prisma,
   Sex
@@ -10,6 +9,7 @@ import {
   studentRegistrationSchema,
   type StudentRegistrationInput
 } from "@/lib/validations/student";
+import { groupLabelSelect } from "@/lib/services/groups";
 
 const studentInclude = {
   enrollments: {
@@ -17,7 +17,7 @@ const studentInclude = {
     include: {
       academicLevel: true,
       modality: true,
-      group: true,
+      group: { select: groupLabelSelect },
       charges: true
     },
     orderBy: { createdAt: "desc" as const },
@@ -47,7 +47,7 @@ export async function getStudentById(id: string) {
         include: {
           academicLevel: true,
           modality: true,
-          group: true,
+          group: { select: groupLabelSelect },
           charges: { include: { chargeConcept: true } }
         },
         orderBy: { createdAt: "desc" }
@@ -191,50 +191,4 @@ export async function createStudent(input: StudentRegistrationInput) {
 
     return student;
   });
-}
-
-export async function getDashboardData() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const [students, todayPayments, pendingCharges] = await Promise.all([
-    getStudents(),
-    prisma.payment.aggregate({
-      where: { paidAt: { gte: today, lt: tomorrow }, status: "APPLIED" },
-      _sum: { amount: true }
-    }),
-    prisma.charge.count({
-      where: { status: { in: [ChargeStatus.PENDING, ChargeStatus.OVERDUE] } }
-    })
-  ]);
-
-  const active = students.filter(
-    (student) =>
-      student.administrativeStatus !== AdministrativeStatus.TEMPORARY_LEAVE &&
-      student.administrativeStatus !== AdministrativeStatus.GRADUATED
-  );
-  const current = students.filter((student) => getStudentBalance(student) === 0);
-  const withDebt = students.filter((student) => getStudentBalance(student) > 0);
-  const incomplete = students.filter(
-    (student) => getMissingDocumentCount(student) > 0
-  );
-
-  return {
-    students,
-    stats: {
-      active: active.length,
-      current: current.length,
-      withDebt: withDebt.length,
-      incomplete: incomplete.length,
-      todayIncome: Number(todayPayments._sum.amount ?? 0),
-      pendingCharges
-    },
-    recentStudents: students.slice(0, 5),
-    attentionStudents: withDebt
-      .sort((a, b) => getStudentBalance(b) - getStudentBalance(a))
-      .slice(0, 5),
-    pendingDocuments: incomplete.slice(0, 5)
-  };
 }

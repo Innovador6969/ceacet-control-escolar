@@ -13,6 +13,7 @@ type StudentFiltersTableProps = {
     enrollmentNumber: string;
     academicLevel: string;
     modality: string;
+    groupId: string;
     group: string;
     phone: string;
     paymentStatus: string;
@@ -22,7 +23,7 @@ type StudentFiltersTableProps = {
   }>;
   levels: string[];
   modalities: string[];
-  groups: string[];
+  groups: Array<{ id: string; name: string }>;
   statuses: string[];
 };
 
@@ -59,7 +60,7 @@ export function StudentFiltersTable({
         matchesEnrollment &&
         (level === "Todos" || student.academicLevel === level) &&
         (modality === "Todas" || student.modality === modality) &&
-        (group === "Todos" || student.group === group) &&
+        (group === "Todos" || student.groupId === group) &&
         (status === "Todos" || student.administrativeStatus === status)
       );
     });
@@ -129,7 +130,7 @@ export function StudentFiltersTable({
         >
           <option>Todos</option>
           {groups.map((item) => (
-            <option key={item}>{item}</option>
+            <option key={item.id} value={item.id}>{item.name}</option>
           ))}
         </select>
         <select

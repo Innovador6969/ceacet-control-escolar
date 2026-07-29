@@ -1,5 +1,6 @@
 import { StudentRegistrationForm } from "@/components/students/student-registration-form";
 import { requireUser } from "@/lib/auth/session";
+import { formatGroupLabel } from "@/lib/labels";
 import { getCatalogs } from "@/lib/services/catalogs";
 
 export default async function RegisterStudentPage() {
@@ -26,7 +27,7 @@ export default async function RegisterStudentPage() {
         }))}
         groups={groups.map((group) => ({
           id: group.id,
-          name: group.name,
+          name: formatGroupLabel(group),
           academicLevelId: group.academicLevelId,
           modalityId: group.modalityId
         }))}

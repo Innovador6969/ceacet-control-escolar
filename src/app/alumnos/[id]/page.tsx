@@ -17,6 +17,7 @@ import {
   administrativeStatusLabels,
   documentStatusLabels,
   formatDate,
+  formatGroupLabel,
   formatMoney,
   sexLabels
 } from "@/lib/labels";
@@ -180,7 +181,7 @@ export default async function StudentDetailPage({
             <div>
               <dt className="text-xs font-semibold text-muted">Grupo</dt>
               <dd className="mt-1 text-sm font-bold text-ink">
-                {enrollment?.group?.name ?? "Sin grupo"}
+                {enrollment?.group ? formatGroupLabel(enrollment.group) : "Sin grupo"}
               </dd>
             </div>
             <div>

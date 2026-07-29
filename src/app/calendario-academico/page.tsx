@@ -3,6 +3,7 @@ import { PlusCircle } from "lucide-react";
 import { AcademicCalendarView } from "@/components/calendar/academic-calendar-view";
 import { EventForm } from "@/components/calendar/event-form";
 import { requireUser } from "@/lib/auth/session";
+import { formatGroupLabel } from "@/lib/labels";
 import { getCalendarModuleData } from "@/lib/services/academic-calendar";
 
 export default async function AcademicCalendarPage() {
@@ -39,7 +40,8 @@ export default async function AcademicCalendarPage() {
           type: event.type,
           startsAt: event.startsAt.toISOString(),
           endsAt: event.endsAt.toISOString(),
-          group: event.group?.name ?? "",
+          groupId: event.group?.id ?? "",
+          group: event.group ? formatGroupLabel(event.group) : "",
           subject: event.subject?.name ?? "",
           teacher: event.teacher?.name ?? "",
           schoolCycle: event.schoolCycle?.name ?? ""
@@ -49,7 +51,10 @@ export default async function AcademicCalendarPage() {
           id: cycle.id,
           name: cycle.name
         }))}
-        groups={data.groups.map((group) => ({ id: group.id, name: group.name }))}
+        groups={data.groups.map((group) => ({
+          id: group.id,
+          name: formatGroupLabel(group)
+        }))}
         teachers={data.teachers.map((teacher) => ({
           id: teacher.id,
           name: teacher.name
@@ -68,7 +73,10 @@ export default async function AcademicCalendarPage() {
           id: period.id,
           name: `${period.name} (${period.schoolCycle.name})`
         }))}
-        groups={data.groups.map((group) => ({ id: group.id, name: group.name }))}
+        groups={data.groups.map((group) => ({
+          id: group.id,
+          name: formatGroupLabel(group)
+        }))}
         subjects={data.subjects.map((subject) => ({
           id: subject.id,
           name: subject.name

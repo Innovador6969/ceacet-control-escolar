@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AssignmentForm } from "@/components/calendar/assignment-form";
 import { requireUser } from "@/lib/auth/session";
+import { formatGroupLabel } from "@/lib/labels";
 import { getCalendarModuleData } from "@/lib/services/academic-calendar";
 
 export default async function AcademicAssignmentsPage() {
@@ -30,7 +31,10 @@ export default async function AcademicAssignmentsPage() {
       </div>
       <AssignmentForm
         subjects={data.subjects.map((item) => ({ id: item.id, name: item.name }))}
-        groups={data.groups.map((item) => ({ id: item.id, name: item.name }))}
+        groups={data.groups.map((item) => ({
+          id: item.id,
+          name: formatGroupLabel(item)
+        }))}
         teachers={data.teachers.map((item) => ({ id: item.id, name: item.name }))}
         classrooms={data.classrooms.map((item) => ({ id: item.id, name: item.name }))}
         academicPeriods={data.academicPeriods.map((item) => ({
@@ -54,7 +58,7 @@ export default async function AcademicAssignmentsPage() {
               <div>
                 <p className="text-sm font-bold text-ink">{assignment.subject.name}</p>
                 <p className="mt-1 text-xs text-muted">
-                  Grupo {assignment.group.name} · {assignment.teacher.name} ·{" "}
+                  Grupo {formatGroupLabel(assignment.group)} · {assignment.teacher.name} ·{" "}
                   {assignment.classroom?.name ?? "Sin aula"}
                 </p>
               </div>

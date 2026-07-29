@@ -60,6 +60,22 @@ export function formatMoney(value: number | string) {
   }).format(Number(value));
 }
 
+type NamedRelation = {
+  id?: string;
+  name: string;
+};
+
+export type GroupLabelData = {
+  id?: string;
+  name: string;
+  academicLevel: NamedRelation;
+  modality: NamedRelation;
+};
+
+export function formatGroupLabel(group: GroupLabelData) {
+  return [group.name, group.academicLevel.name, group.modality.name].join(" — ");
+}
+
 export function formatDate(value?: Date | string | null) {
   if (!value) {
     return "Sin fecha";
