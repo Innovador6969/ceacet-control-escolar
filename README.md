@@ -1,24 +1,25 @@
 # CEACET Control Escolar
 
-Aplicacion web para la primera etapa del sistema de control escolar de CEACET. Esta base cubre administracion inicial de alumnos, inscripciones, expedientes, dashboard, catalogos semilla y preparacion para despliegue en Railway con PostgreSQL y Prisma.
+Aplicacion web para la primera etapa del sistema de control escolar de CEACET. Esta base cubre administracion inicial de alumnos, inscripciones, expedientes, dashboard, catalogos semilla y preparacion para despliegue en Vercel con Neon PostgreSQL y Prisma.
 
 ## Tecnologias
 
 - Next.js con App Router
 - TypeScript estricto
 - Tailwind CSS
-- PostgreSQL
+- PostgreSQL en Neon
 - Prisma ORM
 - Zod
 - React Hook Form
 - bcryptjs para hash de contrasenas
-- Railway como plataforma principal de despliegue
+- Vercel como plataforma de despliegue
 
 ## Requisitos
 
 - Node.js 20 o superior
 - npm
-- PostgreSQL local o un servicio PostgreSQL en Railway
+- Base de datos PostgreSQL en Neon
+- Repositorio GitHub conectado a Vercel
 
 ## Instalacion local
 
@@ -34,7 +35,14 @@ npm install
 cp .env.example .env
 ```
 
-3. Configura `DATABASE_URL` con tu base PostgreSQL y cambia `AUTH_SECRET` por un valor largo y aleatorio.
+3. Configura las variables:
+
+```bash
+DATABASE_URL=<conexion pooled de Neon>
+DIRECT_URL=<conexion directa de Neon>
+AUTH_SECRET=<secreto largo y aleatorio>
+NEXT_PUBLIC_APP_NAME="CEACET Control Escolar"
+```
 
 4. Genera Prisma Client:
 
@@ -75,13 +83,13 @@ Usuario adicional:
 ## Comandos disponibles
 
 - `npm run dev`: servidor de desarrollo
-- `npm run build`: build de produccion
+- `npm run build`: genera Prisma Client y crea el build de produccion
 - `npm run start`: inicia la app compilada
 - `npm run lint`: revision ESLint
 - `npm run db:generate`: genera Prisma Client
 - `npm run db:migrate`: crea/aplica migraciones en desarrollo
 - `npm run db:deploy`: aplica migraciones en produccion con `prisma migrate deploy`
-- `npm run db:seed`: ejecuta datos semilla
+- `npm run db:seed`: ejecuta datos semilla manualmente
 - `npm run db:studio`: abre Prisma Studio
 
 ## Estructura principal
@@ -113,6 +121,11 @@ El esquema inicial incluye:
 
 `User`, `Student`, `Enrollment`, `AcademicLevel`, `Modality`, `Group`, `DocumentType`, `StudentDocument`, `ChargeConcept`, `Charge`, `Payment`, `PaymentApplication`, `Receipt`, `FollowUp` y `AuditLog`.
 
+Para Neon se usan dos URLs:
+
+- `DATABASE_URL`: conexion pooled de Neon para la aplicacion en Vercel.
+- `DIRECT_URL`: conexion directa de Neon para migraciones Prisma.
+
 La migracion de produccion se ejecuta con:
 
 ```bash
@@ -121,33 +134,50 @@ npm run db:deploy
 
 No se usa `prisma db push` como mecanismo de produccion.
 
-## Deploy en Railway
+## Deploy Con GitHub, Vercel Y Neon
 
-1. Crea un proyecto en Railway.
-2. Agrega un servicio PostgreSQL administrado.
-3. Agrega el servicio de la aplicacion desde este repositorio.
-4. Configura variables:
+1. Sube el proyecto a un repositorio de GitHub.
+2. Crea una base de datos PostgreSQL en Neon.
+3. Copia desde Neon:
+
+- La cadena pooled para `DATABASE_URL`.
+- La cadena directa para `DIRECT_URL`.
+
+4. Importa el repositorio desde Vercel.
+5. Configura en Vercel las variables de entorno:
 
 ```bash
-DATABASE_URL=<la URL interna de PostgreSQL generada por Railway>
+DATABASE_URL=<conexion pooled de Neon>
+DIRECT_URL=<conexion directa de Neon>
 AUTH_SECRET=<secreto largo y aleatorio>
 NEXT_PUBLIC_APP_NAME="CEACET Control Escolar"
 ```
 
-5. Railway usara `railway.json` para:
+6. En Vercel usa la configuracion estandar:
 
-- Construir con Nixpacks.
-- Ejecutar `npm run db:deploy && npm run start`.
-- Validar `/api/health` como health check.
+- Install command: `npm install`
+- Build command: `npm run build`
+- Output framework: Next.js
 
-6. Para cargar datos de prueba en Railway, ejecuta en la consola del servicio:
+7. Ejecuta migraciones de produccion manualmente cuando corresponda:
+
+```bash
+npm run db:deploy
+```
+
+8. Ejecuta el seed manualmente solo cuando quieras cargar datos de prueba:
 
 ```bash
 npm run db:seed
 ```
 
-7. Configura el dominio desde la seccion Networking de Railway.
-8. Revisa `https://tu-dominio/api/health`; debe responder:
+9. Revisa el health check del despliegue:
+
+```text
+https://tu-dominio.vercel.app/api/health
+```
+
+Debe responder:
 
 ```json
 {

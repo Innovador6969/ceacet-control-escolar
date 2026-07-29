@@ -197,9 +197,11 @@ CREATE UNIQUE INDEX "Student_enrollmentNumber_key" ON "Student"("enrollmentNumbe
 CREATE UNIQUE INDEX "Student_curp_key" ON "Student"("curp");
 CREATE INDEX "Student_paternalLastName_maternalLastName_firstName_idx" ON "Student"("paternalLastName", "maternalLastName", "firstName");
 CREATE INDEX "Student_administrativeStatus_idx" ON "Student"("administrativeStatus");
+CREATE INDEX "Student_createdAt_idx" ON "Student"("createdAt");
 CREATE INDEX "Enrollment_studentId_idx" ON "Enrollment"("studentId");
 CREATE INDEX "Enrollment_academicLevelId_modalityId_groupId_idx" ON "Enrollment"("academicLevelId", "modalityId", "groupId");
 CREATE INDEX "Enrollment_status_idx" ON "Enrollment"("status");
+CREATE INDEX "Enrollment_enrollmentDate_idx" ON "Enrollment"("enrollmentDate");
 CREATE UNIQUE INDEX "AcademicLevel_code_key" ON "AcademicLevel"("code");
 CREATE UNIQUE INDEX "Modality_code_key" ON "Modality"("code");
 CREATE INDEX "Modality_academicLevelId_idx" ON "Modality"("academicLevelId");
