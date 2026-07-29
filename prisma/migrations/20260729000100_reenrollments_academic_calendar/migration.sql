@@ -166,8 +166,8 @@ CREATE INDEX "Enrollment_schoolCycleId_academicPeriodId_idx" ON "Enrollment"("sc
 
 ALTER TABLE "Enrollment" ADD CONSTRAINT "Enrollment_schoolCycleId_fkey" FOREIGN KEY ("schoolCycleId") REFERENCES "SchoolCycle"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "Enrollment" ADD CONSTRAINT "Enrollment_academicPeriodId_fkey" FOREIGN KEY ("academicPeriodId") REFERENCES "AcademicPeriod"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "AcademicPeriod" ADD CONSTRAINT "AcademicPeriod_schoolCycleId_fkey" FOREIGN KEY ("schoolCycleId") REFERENCES "SchoolCycle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ReEnrollment" ADD CONSTRAINT "ReEnrollment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AcademicPeriod" ADD CONSTRAINT "AcademicPeriod_schoolCycleId_fkey" FOREIGN KEY ("schoolCycleId") REFERENCES "SchoolCycle"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ReEnrollment" ADD CONSTRAINT "ReEnrollment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "ReEnrollment" ADD CONSTRAINT "ReEnrollment_schoolCycleId_fkey" FOREIGN KEY ("schoolCycleId") REFERENCES "SchoolCycle"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "ReEnrollment" ADD CONSTRAINT "ReEnrollment_academicPeriodId_fkey" FOREIGN KEY ("academicPeriodId") REFERENCES "AcademicPeriod"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "ReEnrollment" ADD CONSTRAINT "ReEnrollment_academicLevelId_fkey" FOREIGN KEY ("academicLevelId") REFERENCES "AcademicLevel"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
