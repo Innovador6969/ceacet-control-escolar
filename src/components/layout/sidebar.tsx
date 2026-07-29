@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   BarChart3,
+  CalendarDays,
   FileText,
   Home,
   Landmark,
@@ -17,6 +18,7 @@ const navigation = [
   { href: "/alumnos", label: "Alumnos", icon: UsersRound },
   { href: "/registrar-alumno", label: "Registrar alumno", icon: PlusCircle },
   { href: "/pagos", label: "Pagos", icon: Landmark },
+  { href: "/calendario-academico", label: "Calendario academico", icon: CalendarDays },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/configuracion", label: "Configuracion", icon: Settings }

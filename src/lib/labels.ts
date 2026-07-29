@@ -27,6 +27,7 @@ export const chargeStatusLabels: Record<ChargeStatus, string> = {
   PARTIAL: "Parcial",
   PAID: "Pagado",
   OVERDUE: "Vencido",
+  WAIVED: "Condonado",
   CANCELLED: "Cancelado"
 };
 

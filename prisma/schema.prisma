@@ -49,6 +49,7 @@ enum ChargeStatus {
   PARTIAL
   PAID
   OVERDUE
+  WAIVED
   CANCELLED
 }
 
@@ -71,6 +72,44 @@ enum FollowUpType {
   ADMINISTRATIVE
 }
 
+enum ReEnrollmentStatus {
+  DRAFT
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  WAIVED
+  CANCELLED
+}
+
+enum AcademicEventType {
+  EXAM
+  COURSE_START
+  COURSE_END
+  CLASS_SESSION
+  HOLIDAY
+  SUSPENSION
+  GRADE_DEADLINE
+  INSTITUTIONAL
+  OTHER
+}
+
+enum AcademicEventStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
 model User {
   id           String     @id @default(uuid())
   name         String
@@ -83,6 +122,8 @@ model User {
   payments     Payment[]
   followUps    FollowUp[]
   auditLogs    AuditLog[]
+  reEnrollments ReEnrollment[]
+  academicEvents AcademicCalendarEvent[]
 
   @@index([role])
 }
@@ -113,6 +154,7 @@ model Student {
   documents            StudentDocument[]
   payments             Payment[]
   followUps            FollowUp[]
+  reEnrollments        ReEnrollment[]
 
   @@index([paternalLastName, maternalLastName, firstName])
   @@index([administrativeStatus])
@@ -125,6 +167,8 @@ model Enrollment {
   academicLevelId    String
   modalityId         String
   groupId            String?
+  schoolCycleId      String?
+  academicPeriodId   String?
   grade              String?
   fourMonthPeriod    Int?
   enrollmentDate     DateTime
@@ -141,10 +185,14 @@ model Enrollment {
   academicLevel      AcademicLevel    @relation(fields: [academicLevelId], references: [id])
   modality           Modality         @relation(fields: [modalityId], references: [id])
   group              Group?           @relation(fields: [groupId], references: [id])
+  schoolCycle        SchoolCycle?     @relation(fields: [schoolCycleId], references: [id])
+  academicPeriod     AcademicPeriod?  @relation(fields: [academicPeriodId], references: [id])
   charges            Charge[]
+  sourceReEnrollment ReEnrollment?    @relation("ReEnrollmentResult")
 
   @@index([studentId])
   @@index([academicLevelId, modalityId, groupId])
+  @@index([schoolCycleId, academicPeriodId])
   @@index([status])
   @@index([enrollmentDate])
 }
@@ -157,6 +205,10 @@ model AcademicLevel {
   modalities  Modality[]
   groups      Group[]
   enrollments Enrollment[]
+  reEnrollments ReEnrollment[]
+  subjects    Subject[]
+  academicAssignments AcademicAssignment[]
+  academicEvents AcademicCalendarEvent[]
 }
 
 model Modality {
@@ -168,6 +220,10 @@ model Modality {
   academicLevel   AcademicLevel @relation(fields: [academicLevelId], references: [id])
   groups          Group[]
   enrollments     Enrollment[]
+  reEnrollments   ReEnrollment[]
+  subjects        Subject[]
+  academicAssignments AcademicAssignment[]
+  academicEvents AcademicCalendarEvent[]
 
   @@index([academicLevelId])
 }
@@ -183,6 +239,9 @@ model Group {
   academicLevel   AcademicLevel @relation(fields: [academicLevelId], references: [id])
   modality        Modality      @relation(fields: [modalityId], references: [id])
   enrollments     Enrollment[]
+  reEnrollments   ReEnrollment[]
+  academicAssignments AcademicAssignment[]
+  academicEvents  AcademicCalendarEvent[]
 
   @@index([academicLevelId, modalityId])
 }
@@ -235,6 +294,7 @@ model Charge {
   enrollment       Enrollment           @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   chargeConcept    ChargeConcept        @relation(fields: [chargeConceptId], references: [id])
   paymentApplications PaymentApplication[]
+  reEnrollment     ReEnrollment?
 
   @@index([enrollmentId])
   @@index([dueDate, status])
@@ -306,4 +366,196 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([createdAt])
+}
+
+model SchoolCycle {
+  id              String                  @id @default(uuid())
+  name            String                  @unique
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  periods         AcademicPeriod[]
+  enrollments     Enrollment[]
+  reEnrollments   ReEnrollment[]
+  academicEvents  AcademicCalendarEvent[]
+
+  @@index([isActive])
+  @@index([startDate, endDate])
+}
+
+model AcademicPeriod {
+  id              String                  @id @default(uuid())
+  schoolCycleId   String
+  name            String
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  schoolCycle     SchoolCycle             @relation(fields: [schoolCycleId], references: [id], onDelete: Cascade)
+  enrollments     Enrollment[]
+  reEnrollments   ReEnrollment[]
+  academicAssignments AcademicAssignment[]
+  academicEvents  AcademicCalendarEvent[]
+
+  @@unique([schoolCycleId, name])
+  @@index([schoolCycleId, isActive])
+  @@index([startDate, endDate])
+}
+
+model ReEnrollment {
+  id                  String             @id @default(uuid())
+  studentId           String
+  schoolCycleId       String
+  academicPeriodId    String?
+  academicLevelId     String
+  modalityId          String
+  groupId             String?
+  chargeId            String             @unique
+  resultingEnrollmentId String?          @unique
+  status              ReEnrollmentStatus @default(DRAFT)
+  dueDate             DateTime
+  lateFeePercentage   Decimal            @default(0) @db.Decimal(5, 2)
+  createdById         String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  student             Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolCycle         SchoolCycle        @relation(fields: [schoolCycleId], references: [id])
+  academicPeriod      AcademicPeriod?    @relation(fields: [academicPeriodId], references: [id])
+  academicLevel       AcademicLevel      @relation(fields: [academicLevelId], references: [id])
+  modality            Modality           @relation(fields: [modalityId], references: [id])
+  group               Group?             @relation(fields: [groupId], references: [id])
+  charge              Charge             @relation(fields: [chargeId], references: [id])
+  resultingEnrollment Enrollment?         @relation("ReEnrollmentResult", fields: [resultingEnrollmentId], references: [id])
+  createdBy           User?              @relation(fields: [createdById], references: [id])
+
+  @@index([studentId, schoolCycleId, academicLevelId, modalityId, groupId, academicPeriodId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Subject {
+  id              String               @id @default(uuid())
+  name            String
+  code            String               @unique
+  academicLevelId String
+  modalityId      String?
+  active          Boolean              @default(true)
+  academicLevel   AcademicLevel        @relation(fields: [academicLevelId], references: [id])
+  modality        Modality?            @relation(fields: [modalityId], references: [id])
+  academicAssignments AcademicAssignment[]
+  academicEvents  AcademicCalendarEvent[]
+
+  @@index([academicLevelId, modalityId])
+  @@index([active])
+}
+
+model Teacher {
+  id              String               @id @default(uuid())
+  name            String
+  email           String?              @unique
+  phone           String?
+  active          Boolean              @default(true)
+  academicAssignments AcademicAssignment[]
+  academicEvents  AcademicCalendarEvent[]
+
+  @@index([active])
+}
+
+model Classroom {
+  id              String               @id @default(uuid())
+  name            String               @unique
+  location        String?
+  capacity        Int?
+  active          Boolean              @default(true)
+  academicAssignments AcademicAssignment[]
+  academicEvents  AcademicCalendarEvent[]
+
+  @@index([active])
+}
+
+model AcademicAssignment {
+  id               String             @id @default(uuid())
+  subjectId        String
+  groupId          String
+  teacherId        String
+  classroomId      String?
+  academicPeriodId String
+  academicLevelId  String
+  modalityId       String
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  subject          Subject            @relation(fields: [subjectId], references: [id])
+  group            Group              @relation(fields: [groupId], references: [id])
+  teacher          Teacher            @relation(fields: [teacherId], references: [id])
+  classroom        Classroom?         @relation(fields: [classroomId], references: [id])
+  academicPeriod   AcademicPeriod     @relation(fields: [academicPeriodId], references: [id], onDelete: Cascade)
+  academicLevel    AcademicLevel      @relation(fields: [academicLevelId], references: [id])
+  modality         Modality           @relation(fields: [modalityId], references: [id])
+  scheduleRules    ScheduleRule[]
+
+  @@index([academicPeriodId, groupId])
+  @@index([academicPeriodId, teacherId])
+  @@index([academicPeriodId, classroomId])
+  @@index([subjectId])
+}
+
+model ScheduleRule {
+  id                   String             @id @default(uuid())
+  academicAssignmentId String
+  weekday              Weekday
+  startTime            String
+  endTime              String
+  startDate            DateTime
+  endDate              DateTime
+  active               Boolean            @default(true)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  academicAssignment   AcademicAssignment @relation(fields: [academicAssignmentId], references: [id], onDelete: Cascade)
+
+  @@index([academicAssignmentId])
+  @@index([weekday, startDate, endDate])
+  @@index([active])
+}
+
+model AcademicCalendarEvent {
+  id               String              @id @default(uuid())
+  title            String
+  description      String?
+  type             AcademicEventType
+  startsAt         DateTime
+  endsAt           DateTime
+  allDay           Boolean             @default(false)
+  schoolCycleId    String?
+  academicPeriodId String?
+  academicLevelId  String?
+  modalityId       String?
+  groupId          String?
+  subjectId        String?
+  teacherId        String?
+  classroomId      String?
+  status           AcademicEventStatus @default(SCHEDULED)
+  reminderAt       DateTime?
+  createdById      String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  schoolCycle      SchoolCycle?        @relation(fields: [schoolCycleId], references: [id])
+  academicPeriod   AcademicPeriod?     @relation(fields: [academicPeriodId], references: [id])
+  academicLevel    AcademicLevel?      @relation(fields: [academicLevelId], references: [id])
+  modality         Modality?           @relation(fields: [modalityId], references: [id])
+  group            Group?              @relation(fields: [groupId], references: [id])
+  subject          Subject?            @relation(fields: [subjectId], references: [id])
+  teacher          Teacher?            @relation(fields: [teacherId], references: [id])
+  classroom        Classroom?          @relation(fields: [classroomId], references: [id])
+  createdBy        User?               @relation(fields: [createdById], references: [id])
+
+  @@index([startsAt, endsAt])
+  @@index([type])
+  @@index([schoolCycleId, academicPeriodId])
+  @@index([groupId])
+  @@index([teacherId])
+  @@index([subjectId])
 }

@@ -17,14 +17,23 @@ async function main() {
   await prisma.paymentApplication.deleteMany();
   await prisma.receipt.deleteMany();
   await prisma.payment.deleteMany();
+  await prisma.reEnrollment.deleteMany();
   await prisma.charge.deleteMany();
   await prisma.studentDocument.deleteMany();
   await prisma.followUp.deleteMany();
+  await prisma.academicCalendarEvent.deleteMany();
+  await prisma.scheduleRule.deleteMany();
+  await prisma.academicAssignment.deleteMany();
+  await prisma.subject.deleteMany();
+  await prisma.teacher.deleteMany();
+  await prisma.classroom.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.student.deleteMany();
   await prisma.group.deleteMany();
   await prisma.modality.deleteMany();
   await prisma.academicLevel.deleteMany();
+  await prisma.academicPeriod.deleteMany();
+  await prisma.schoolCycle.deleteMany();
   await prisma.documentType.deleteMany();
   await prisma.chargeConcept.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -130,6 +139,114 @@ async function main() {
       }
     })
   ]);
+
+  const schoolCycle = await prisma.schoolCycle.create({
+    data: {
+      name: "Ciclo 2026",
+      startDate: date("2026-01-15"),
+      endDate: date("2026-12-15")
+    }
+  });
+
+  const academicPeriods = await Promise.all([
+    prisma.academicPeriod.create({
+      data: {
+        schoolCycleId: schoolCycle.id,
+        name: "Primer periodo 2026",
+        startDate: date("2026-01-15"),
+        endDate: date("2026-06-30")
+      }
+    }),
+    prisma.academicPeriod.create({
+      data: {
+        schoolCycleId: schoolCycle.id,
+        name: "Segundo periodo 2026",
+        startDate: date("2026-07-01"),
+        endDate: date("2026-12-15")
+      }
+    })
+  ]);
+
+  const subjects = await Promise.all([
+    prisma.subject.create({
+      data: {
+        name: "Matematicas",
+        code: "MAT-SEC",
+        academicLevelId: secundaria.id,
+        modalityId: secAbierta.id
+      }
+    }),
+    prisma.subject.create({
+      data: {
+        name: "Comunicacion",
+        code: "COM-PRE",
+        academicLevelId: preparatoria.id,
+        modalityId: preAbierta.id
+      }
+    }),
+    prisma.subject.create({
+      data: {
+        name: "Historia",
+        code: "HIS-PRE",
+        academicLevelId: preparatoria.id,
+        modalityId: preCuatrimestral.id
+      }
+    })
+  ]);
+
+  const [teacherOne] = await Promise.all([
+    prisma.teacher.create({
+      data: { name: "Docente Demo Uno", email: "docente1@example.com" }
+    }),
+    prisma.teacher.create({
+      data: { name: "Docente Demo Dos", email: "docente2@example.com" }
+    })
+  ]);
+
+  const [classroomOne] = await Promise.all([
+    prisma.classroom.create({
+      data: { name: "Aula 1", location: "Planta baja", capacity: 25 }
+    }),
+    prisma.classroom.create({
+      data: { name: "Aula 2", location: "Planta alta", capacity: 25 }
+    })
+  ]);
+
+  await prisma.academicAssignment.create({
+    data: {
+      subjectId: subjects[0].id,
+      groupId: groups[0].id,
+      teacherId: teacherOne.id,
+      classroomId: classroomOne.id,
+      academicPeriodId: academicPeriods[0].id,
+      academicLevelId: secundaria.id,
+      modalityId: secAbierta.id,
+      scheduleRules: {
+        create: [
+          {
+            weekday: "MONDAY",
+            startTime: "17:00",
+            endTime: "18:30",
+            startDate: date("2026-01-15"),
+            endDate: date("2026-06-30")
+          }
+        ]
+      }
+    }
+  });
+
+  await prisma.academicCalendarEvent.create({
+    data: {
+      title: "Inicio de cursos 2026",
+      type: "COURSE_START",
+      startsAt: date("2026-01-15"),
+      endsAt: date("2026-01-15"),
+      allDay: true,
+      schoolCycleId: schoolCycle.id,
+      academicPeriodId: academicPeriods[0].id,
+      createdById: admin.id
+    }
+  });
 
   const documentTypes = await Promise.all(
     [
