@@ -20,10 +20,22 @@ export default async function SettingsPage() {
         ]}
       />
       <Link
+        href="/configuracion-academica/niveles-academicos"
+        className="focus-ring inline-flex h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-ink shadow-sm transition hover:bg-surface"
+      >
+        Administrar niveles academicos
+      </Link>
+      <Link
         href="/configuracion-academica/grupos"
         className="focus-ring inline-flex h-11 items-center rounded-lg bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
       >
         Administrar grupos
+      </Link>
+      <Link
+        href="/configuracion-academica/modalidades"
+        className="focus-ring inline-flex h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-ink shadow-sm transition hover:bg-surface"
+      >
+        Administrar modalidades
       </Link>
     </div>
   );

@@ -111,21 +111,25 @@ enum Weekday {
 }
 
 model User {
-  id             String                  @id @default(uuid())
-  name           String
-  email          String                  @unique
-  passwordHash   String
-  role           UserRole                @default(READ_ONLY)
-  active         Boolean                 @default(true)
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-  payments       Payment[]
-  followUps      FollowUp[]
-  auditLogs      AuditLog[]
-  reEnrollments  ReEnrollment[]
-  academicEvents AcademicCalendarEvent[]
-  createdGroups  Group[]                 @relation("GroupCreatedBy")
-  updatedGroups  Group[]                 @relation("GroupUpdatedBy")
+  id                    String                  @id @default(uuid())
+  name                  String
+  email                 String                  @unique
+  passwordHash          String
+  role                  UserRole                @default(READ_ONLY)
+  active                Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  payments              Payment[]
+  followUps             FollowUp[]
+  auditLogs             AuditLog[]
+  reEnrollments         ReEnrollment[]
+  academicEvents        AcademicCalendarEvent[]
+  createdGroups         Group[]                 @relation("GroupCreatedBy")
+  updatedGroups         Group[]                 @relation("GroupUpdatedBy")
+  createdModalities     Modality[]              @relation("ModalityCreatedBy")
+  updatedModalities     Modality[]              @relation("ModalityUpdatedBy")
+  createdAcademicLevels AcademicLevel[]         @relation("AcademicLevelCreatedBy")
+  updatedAcademicLevels AcademicLevel[]         @relation("AcademicLevelUpdatedBy")
 
   @@index([role])
 }
@@ -202,8 +206,16 @@ model Enrollment {
 model AcademicLevel {
   id                  String                  @id @default(uuid())
   name                String
-  code                String                  @unique
+  code                String?
+  description         String?
+  displayOrder        Int                     @default(0)
   active              Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  createdBy           User?                   @relation("AcademicLevelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("AcademicLevelUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   modalities          Modality[]
   groups              Group[]
   enrollments         Enrollment[]
@@ -211,15 +223,27 @@ model AcademicLevel {
   subjects            Subject[]
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
+
+  @@index([active, displayOrder, name])
+  @@index([active, code])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model Modality {
   id                  String                  @id @default(uuid())
   academicLevelId     String
   name                String
-  code                String                  @unique
+  code                String?
+  description         String?
   active              Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
   academicLevel       AcademicLevel           @relation(fields: [academicLevelId], references: [id])
+  createdBy           User?                   @relation("ModalityCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("ModalityUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   groups              Group[]
   enrollments         Enrollment[]
   reEnrollments       ReEnrollment[]
@@ -227,7 +251,10 @@ model Modality {
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
 
-  @@index([academicLevelId])
+  @@index([active, academicLevelId])
+  @@index([active, code])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model Group {

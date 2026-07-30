@@ -99,6 +99,10 @@ async function generateEnrollmentNumber(
   const level = await tx.academicLevel.findUniqueOrThrow({
     where: { id: academicLevelId }
   });
+  if (!level.code) {
+    throw new Error("El nivel academico seleccionado no tiene codigo para generar matricula.");
+  }
+
   const year = new Date(`${enrollmentDate}T00:00:00`).getFullYear();
   const prefix = `${level.code}-${year}`;
   const existing = await tx.student.count({
@@ -113,6 +117,45 @@ export async function createStudent(input: StudentRegistrationInput) {
   const normalizedCurp = data.curp?.toUpperCase();
 
   return prisma.$transaction(async (tx) => {
+    const [academicLevel, modality, group] = await Promise.all([
+      tx.academicLevel.findUniqueOrThrow({
+        where: { id: data.academicLevelId },
+        select: { id: true, active: true }
+      }),
+      tx.modality.findUniqueOrThrow({
+        where: { id: data.modalityId },
+        select: { id: true, active: true, academicLevelId: true }
+      }),
+      data.groupId
+        ? tx.group.findUniqueOrThrow({
+            where: { id: data.groupId },
+            select: {
+              id: true,
+              active: true,
+              academicLevelId: true,
+              modalityId: true
+            }
+          })
+        : Promise.resolve(null)
+    ]);
+
+    if (!academicLevel.active) {
+      throw new Error("El nivel academico seleccionado esta inactivo.");
+    }
+
+    if (!modality.active || modality.academicLevelId !== data.academicLevelId) {
+      throw new Error("La modalidad seleccionada no pertenece al nivel academico o esta inactiva.");
+    }
+
+    if (
+      group &&
+      (!group.active ||
+        group.academicLevelId !== data.academicLevelId ||
+        group.modalityId !== data.modalityId)
+    ) {
+      throw new Error("El grupo seleccionado no pertenece a la trayectoria academica o esta inactivo.");
+    }
+
     if (normalizedCurp) {
       const existingCurp = await tx.student.findUnique({
         where: { curp: normalizedCurp }

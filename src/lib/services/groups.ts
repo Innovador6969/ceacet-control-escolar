@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
+import { getActiveModalities, modalityLabelSelect } from "@/lib/services/modalities";
 import { groupSchema, type GroupInput } from "@/lib/validations/group";
 
 export const groupLabelSelect = {
@@ -85,19 +87,44 @@ export async function getGroups() {
   });
 }
 
-export async function getGroupFormCatalogs() {
-  const [academicLevels, modalities] = await Promise.all([
-    prisma.academicLevel.findMany({
-      where: { active: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" }
-    }),
-    prisma.modality.findMany({
-      where: { active: true },
-      select: { id: true, name: true, academicLevelId: true },
-      orderBy: { name: "asc" }
-    })
+export async function getGroupFormCatalogs(
+  currentAcademicLevelId?: string,
+  currentModalityId?: string
+) {
+  const [activeLevels, activeModalities] = await Promise.all([
+    getActiveAcademicLevels(),
+    getActiveModalities()
   ]);
+  const hasCurrentLevel =
+    currentAcademicLevelId &&
+    activeLevels.some((level) => level.id === currentAcademicLevelId);
+  const hasCurrentModality =
+    currentModalityId &&
+    activeModalities.some((modality) => modality.id === currentModalityId);
+  const [currentLevel, currentModality] = await Promise.all([
+    currentAcademicLevelId && !hasCurrentLevel
+      ? prisma.academicLevel.findUnique({
+          where: { id: currentAcademicLevelId },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            active: true,
+            displayOrder: true
+          }
+        })
+      : Promise.resolve(null),
+    currentModalityId && !hasCurrentModality
+      ? prisma.modality.findUnique({
+          where: { id: currentModalityId },
+          select: modalityLabelSelect
+        })
+      : Promise.resolve(null)
+  ]);
+  const academicLevels = currentLevel ? [...activeLevels, currentLevel] : activeLevels;
+  const modalities = currentModality
+    ? [...activeModalities, currentModality]
+    : activeModalities;
 
   return { academicLevels, modalities };
 }
@@ -142,11 +169,21 @@ async function validateLevelAndModality(
   academicLevelId: string,
   modalityId: string
 ) {
-  await tx.academicLevel.findUniqueOrThrow({ where: { id: academicLevelId } });
+  const academicLevel = await tx.academicLevel.findUniqueOrThrow({
+    where: { id: academicLevelId },
+    select: { id: true, active: true }
+  });
+  if (!academicLevel.active) {
+    throw new Error("El nivel academico seleccionado esta inactivo.");
+  }
+
   const modality = await tx.modality.findUniqueOrThrow({
     where: { id: modalityId },
-    select: { id: true, academicLevelId: true }
+    select: { id: true, academicLevelId: true, active: true }
   });
+  if (!modality.active) {
+    throw new Error("La modalidad seleccionada esta inactiva.");
+  }
 
   if (modality.academicLevelId !== academicLevelId) {
     throw new Error("La modalidad seleccionada no pertenece al nivel academico.");

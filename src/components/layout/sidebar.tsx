@@ -5,10 +5,12 @@ import {
   BarChart3,
   CalendarDays,
   FileText,
+  GraduationCap,
   Home,
   Landmark,
   Layers3,
   PlusCircle,
+  School,
   Settings,
   UsersRound
 } from "lucide-react";
@@ -20,6 +22,8 @@ const navigation = [
   { href: "/registrar-alumno", label: "Registrar alumno", icon: PlusCircle },
   { href: "/pagos", label: "Pagos", icon: Landmark },
   { href: "/calendario-academico", label: "Calendario academico", icon: CalendarDays },
+  { href: "/configuracion-academica/niveles-academicos", label: "Niveles academicos", icon: GraduationCap },
+  { href: "/configuracion-academica/modalidades", label: "Modalidades", icon: School },
   { href: "/configuracion-academica/grupos", label: "Grupos", icon: Layers3 },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },

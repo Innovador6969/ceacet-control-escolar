@@ -20,9 +20,8 @@ type GroupDetailPageProps = {
 export default async function GroupDetailPage({ params }: GroupDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
-  const [group, catalogs, auditHistory] = await Promise.all([
+  const [group, auditHistory] = await Promise.all([
     getGroupById(id),
-    getGroupFormCatalogs(),
     getGroupAuditHistory(id)
   ]);
 
@@ -30,6 +29,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
     notFound();
   }
 
+  const catalogs = await getGroupFormCatalogs(group.academicLevelId, group.modalityId);
   const canManage = user.role !== "READ_ONLY";
 
   return (

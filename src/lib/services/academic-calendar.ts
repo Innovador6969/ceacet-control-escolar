@@ -1,7 +1,9 @@
 import { AcademicEventType, Prisma, Weekday } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatGroupLabel } from "@/lib/labels";
+import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
 import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
+import { getActiveModalities } from "@/lib/services/modalities";
 import {
   academicAssignmentSchema,
   academicPeriodSchema,
@@ -89,8 +91,8 @@ export async function getCalendarModuleData() {
   ] = await Promise.all([
     prisma.schoolCycle.findMany({ orderBy: { startDate: "desc" } }),
     prisma.academicPeriod.findMany({ include: { schoolCycle: true }, orderBy: { startDate: "desc" } }),
-    prisma.academicLevel.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.modality.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    getActiveAcademicLevels(),
+    getActiveModalities(),
     getActiveGroups(),
     prisma.subject.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.teacher.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
