@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/db";
 
-export const catalogAuditEntities = ["AcademicLevel", "Modality", "Group"] as const;
+export const catalogAuditEntities = [
+  "AcademicLevel",
+  "Modality",
+  "Group",
+  "SchoolCycle",
+  "AcademicPeriod"
+] as const;
 
 export type CatalogAuditEntity = (typeof catalogAuditEntities)[number];
 

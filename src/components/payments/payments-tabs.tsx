@@ -56,6 +56,8 @@ export function PaymentsTabs({
   groups
 }: PaymentsTabsProps) {
   const [activeTab, setActiveTab] = useState("reenrollments");
+  const [newReEnrollmentCycleId, setNewReEnrollmentCycleId] = useState("");
+  const [newReEnrollmentPeriodId, setNewReEnrollmentPeriodId] = useState("");
   const [filters, setFilters] = useState({
     cycle: "Todos",
     program: "Todos",
@@ -97,10 +99,19 @@ export function PaymentsTabs({
     return options;
   }, [rows]);
 
+  const filteredAcademicPeriods = useMemo(
+    () =>
+      newReEnrollmentCycleId
+        ? academicPeriods.filter((period) => period.schoolCycleId === newReEnrollmentCycleId)
+        : [],
+    [academicPeriods, newReEnrollmentCycleId]
+  );
+
   async function createReEnrollment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const response = await fetch("/api/reenrollments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -114,13 +125,16 @@ export function PaymentsTabs({
     }
 
     setMessage("Reinscripcion creada. Actualiza la pagina para verla en el listado.");
-    event.currentTarget.reset();
+    setNewReEnrollmentCycleId("");
+    setNewReEnrollmentPeriodId("");
+    form.reset();
   }
 
   async function registerPayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const response = await fetch("/api/reenrollments/payments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,7 +148,7 @@ export function PaymentsTabs({
     }
 
     setMessage("Pago registrado. Actualiza la pagina para ver el saldo recalculado.");
-    event.currentTarget.reset();
+    form.reset();
   }
 
   return (
@@ -190,15 +204,35 @@ export function PaymentsTabs({
                     <option key={student.id} value={student.id}>{student.name}</option>
                   ))}
                 </select>
-                <select name="schoolCycleId" required className="focus-ring h-11 rounded-lg border border-line px-3 text-sm">
+                <select
+                  name="schoolCycleId"
+                  required
+                  value={newReEnrollmentCycleId}
+                  onChange={(event) => {
+                    const nextCycleId = event.target.value;
+                    setNewReEnrollmentCycleId(nextCycleId);
+                    const selectedPeriod = academicPeriods.find(
+                      (period) => period.id === newReEnrollmentPeriodId
+                    );
+                    if (!selectedPeriod || selectedPeriod.schoolCycleId !== nextCycleId) {
+                      setNewReEnrollmentPeriodId("");
+                    }
+                  }}
+                  className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+                >
                   <option value="">Ciclo escolar</option>
                   {schoolCycles.map((cycle) => (
                     <option key={cycle.id} value={cycle.id}>{cycle.name}</option>
                   ))}
                 </select>
-                <select name="academicPeriodId" className="focus-ring h-11 rounded-lg border border-line px-3 text-sm">
+                <select
+                  name="academicPeriodId"
+                  value={newReEnrollmentPeriodId}
+                  onChange={(event) => setNewReEnrollmentPeriodId(event.target.value)}
+                  className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+                >
                   <option value="">Periodo academico</option>
-                  {academicPeriods.map((period) => (
+                  {filteredAcademicPeriods.map((period) => (
                     <option key={period.id} value={period.id}>{period.name}</option>
                   ))}
                 </select>

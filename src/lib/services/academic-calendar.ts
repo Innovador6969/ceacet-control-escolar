@@ -1,15 +1,15 @@
 import { AcademicEventType, Prisma, Weekday } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatGroupLabel } from "@/lib/labels";
+import { getActiveAcademicPeriods } from "@/lib/services/academic-periods";
 import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
 import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
 import { getActiveModalities } from "@/lib/services/modalities";
+import { getActiveSchoolCycles } from "@/lib/services/school-cycles";
 import {
   academicAssignmentSchema,
-  academicPeriodSchema,
   calendarEventSchema,
   type AcademicAssignmentInput,
-  type AcademicPeriodInput,
   type CalendarEventInput
 } from "@/lib/validations/academic-calendar";
 
@@ -37,45 +37,6 @@ function timesOverlap(startA: string, endA: string, startB: string, endB: string
   return startA < endB && endA > startB;
 }
 
-async function validatePeriodInsideCycle(
-  tx: Prisma.TransactionClient,
-  input: AcademicPeriodInput
-) {
-  const cycle = await tx.schoolCycle.findUniqueOrThrow({
-    where: { id: input.schoolCycleId }
-  });
-  const startDate = parseDate(input.startDate);
-  const endDate = parseDate(input.endDate);
-
-  if (endDate < startDate) {
-    throw new Error("La fecha final del periodo no puede ser anterior a la inicial.");
-  }
-
-  if (startDate < cycle.startDate || endDate > cycle.endDate) {
-    throw new Error("El periodo debe estar contenido dentro del ciclo escolar.");
-  }
-
-  return { startDate, endDate };
-}
-
-export async function createAcademicPeriod(input: AcademicPeriodInput) {
-  const data = academicPeriodSchema.parse(input);
-
-  return prisma.$transaction(async (tx) => {
-    const { startDate, endDate } = await validatePeriodInsideCycle(tx, data);
-
-    return tx.academicPeriod.create({
-      data: {
-        schoolCycleId: data.schoolCycleId,
-        name: data.name,
-        startDate,
-        endDate,
-        isActive: data.isActive ?? true
-      }
-    });
-  });
-}
-
 export async function getCalendarModuleData() {
   const [
     schoolCycles,
@@ -89,8 +50,8 @@ export async function getCalendarModuleData() {
     events,
     assignments
   ] = await Promise.all([
-    prisma.schoolCycle.findMany({ orderBy: { startDate: "desc" } }),
-    prisma.academicPeriod.findMany({ include: { schoolCycle: true }, orderBy: { startDate: "desc" } }),
+    getActiveSchoolCycles(),
+    getActiveAcademicPeriods(),
     getActiveAcademicLevels(),
     getActiveModalities(),
     getActiveGroups(),
@@ -268,6 +229,9 @@ export async function createAcademicAssignment(input: AcademicAssignmentInput) {
       where: { id: data.academicPeriodId },
       include: { schoolCycle: true }
     });
+    if (!period.isActive || !period.schoolCycle.isActive) {
+      throw new Error("El periodo academico seleccionado esta inactivo.");
+    }
     const rules = data.rules.map((rule) => ({
       weekday: rule.weekday,
       startTime: rule.startTime,
@@ -312,6 +276,32 @@ export async function createCalendarEvent(
 
   if (endsAt <= startsAt) {
     throw new Error("La fecha final del evento debe ser posterior a la inicial.");
+  }
+
+  if (data.schoolCycleId) {
+    const cycle = await prisma.schoolCycle.findUniqueOrThrow({
+      where: { id: data.schoolCycleId },
+      select: { isActive: true }
+    });
+
+    if (!cycle.isActive) {
+      throw new Error("El ciclo escolar seleccionado esta inactivo.");
+    }
+  }
+
+  if (data.academicPeriodId) {
+    const period = await prisma.academicPeriod.findUniqueOrThrow({
+      where: { id: data.academicPeriodId },
+      select: { isActive: true, schoolCycleId: true, schoolCycle: { select: { isActive: true } } }
+    });
+
+    if (!period.isActive || !period.schoolCycle.isActive) {
+      throw new Error("El periodo academico seleccionado esta inactivo.");
+    }
+
+    if (data.schoolCycleId && period.schoolCycleId !== data.schoolCycleId) {
+      throw new Error("El periodo academico no pertenece al ciclo escolar seleccionado.");
+    }
   }
 
   return prisma.academicCalendarEvent.create({

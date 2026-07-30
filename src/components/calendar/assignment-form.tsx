@@ -27,8 +27,9 @@ export function AssignmentForm({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     const response = await fetch("/api/academic-assignments", {
       method: "POST",
@@ -60,7 +61,7 @@ export function AssignmentForm({
     }
 
     setMessage("Asignacion creada. Actualiza la pagina para verla en calendario.");
-    event.currentTarget.reset();
+    form.reset();
   }
 
   return (

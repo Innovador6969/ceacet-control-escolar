@@ -71,7 +71,8 @@ export default async function AcademicCalendarPage() {
         }))}
         academicPeriods={data.academicPeriods.map((period) => ({
           id: period.id,
-          name: `${period.name} (${period.schoolCycle.name})`
+          name: `${period.name} (${period.schoolCycle.name})`,
+          schoolCycleId: period.schoolCycleId
         }))}
         groups={data.groups.map((group) => ({
           id: group.id,

@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/labels";
 import type { CatalogAuditEntry, CatalogAuditValue } from "@/lib/types/catalog";
 
 type CatalogAuditAccordionProps = {
-  entity: "AcademicLevel" | "Modality" | "Group";
+  entity: "AcademicLevel" | "Modality" | "Group" | "SchoolCycle" | "AcademicPeriod";
   entityId: string;
   initialCount: number;
   emptyMessage: string;

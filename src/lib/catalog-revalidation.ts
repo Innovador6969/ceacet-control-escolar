@@ -14,6 +14,7 @@ const academicOperationPaths = [
 ];
 
 const paymentOperationPaths = ["/pagos"];
+const reEnrollmentOperationPaths = ["/pagos"];
 
 function revalidateMany(paths: string[]) {
   for (const path of paths) {
@@ -58,5 +59,30 @@ export function revalidateGroupCatalogPaths(id?: string) {
 
   if (id) {
     revalidatePath(`/configuracion-academica/grupos/${id}`);
+  }
+}
+
+export function revalidateSchoolCycleCatalogPaths(id?: string) {
+  revalidateMany([
+    "/configuracion-academica/ciclos-escolares",
+    "/configuracion-academica/periodos-academicos",
+    ...reEnrollmentOperationPaths,
+    ...academicOperationPaths
+  ]);
+
+  if (id) {
+    revalidatePath(`/configuracion-academica/ciclos-escolares/${id}`);
+  }
+}
+
+export function revalidateAcademicPeriodCatalogPaths(id?: string) {
+  revalidateMany([
+    "/configuracion-academica/periodos-academicos",
+    ...reEnrollmentOperationPaths,
+    ...academicOperationPaths
+  ]);
+
+  if (id) {
+    revalidatePath(`/configuracion-academica/periodos-academicos/${id}`);
   }
 }

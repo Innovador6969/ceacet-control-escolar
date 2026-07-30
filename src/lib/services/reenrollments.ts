@@ -6,9 +6,11 @@ import {
   ReEnrollmentStatus
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getActiveAcademicPeriods } from "@/lib/services/academic-periods";
 import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
 import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
 import { getActiveModalities } from "@/lib/services/modalities";
+import { getActiveSchoolCycles } from "@/lib/services/school-cycles";
 import {
   reEnrollmentCreateSchema,
   reEnrollmentPaymentSchema,
@@ -150,11 +152,8 @@ export async function getReEnrollmentModuleData() {
       where: { administrativeStatus: { notIn: ["TEMPORARY_LEAVE", "GRADUATED"] } },
       orderBy: [{ paternalLastName: "asc" }, { firstName: "asc" }]
     }),
-    prisma.schoolCycle.findMany({ orderBy: { startDate: "desc" } }),
-    prisma.academicPeriod.findMany({
-      include: { schoolCycle: true },
-      orderBy: { startDate: "desc" }
-    }),
+    getActiveSchoolCycles(),
+    getActiveAcademicPeriods(),
     getActiveAcademicLevels(),
     getActiveModalities(),
     getActiveGroups()
@@ -181,10 +180,20 @@ export async function createReEnrollment(
 
   return prisma.$transaction(async (tx) => {
     const [schoolCycle, academicPeriod] = await Promise.all([
-      tx.schoolCycle.findUniqueOrThrow({ where: { id: data.schoolCycleId } }),
+      tx.schoolCycle.findUniqueOrThrow({
+        where: { id: data.schoolCycleId },
+        select: { id: true, isActive: true, startDate: true, endDate: true }
+      }),
       data.academicPeriodId
         ? tx.academicPeriod.findUniqueOrThrow({
-            where: { id: data.academicPeriodId }
+            where: { id: data.academicPeriodId },
+            select: {
+              id: true,
+              schoolCycleId: true,
+              isActive: true,
+              startDate: true,
+              endDate: true
+            }
           })
         : Promise.resolve(null)
     ]);
@@ -210,6 +219,10 @@ export async function createReEnrollment(
         : Promise.resolve(null)
     ]);
 
+    if (!schoolCycle.isActive) {
+      throw new Error("El ciclo escolar seleccionado esta inactivo.");
+    }
+
     if (!academicLevel.active) {
       throw new Error("El nivel academico seleccionado esta inactivo.");
     }
@@ -228,6 +241,10 @@ export async function createReEnrollment(
     }
 
     if (academicPeriod) {
+      if (!academicPeriod.isActive) {
+        throw new Error("El periodo academico seleccionado esta inactivo.");
+      }
+
       const periodInsideCycle =
         academicPeriod.schoolCycleId === schoolCycle.id &&
         academicPeriod.startDate >= schoolCycle.startDate &&

@@ -111,25 +111,29 @@ enum Weekday {
 }
 
 model User {
-  id                    String                  @id @default(uuid())
-  name                  String
-  email                 String                  @unique
-  passwordHash          String
-  role                  UserRole                @default(READ_ONLY)
-  active                Boolean                 @default(true)
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  payments              Payment[]
-  followUps             FollowUp[]
-  auditLogs             AuditLog[]
-  reEnrollments         ReEnrollment[]
-  academicEvents        AcademicCalendarEvent[]
-  createdGroups         Group[]                 @relation("GroupCreatedBy")
-  updatedGroups         Group[]                 @relation("GroupUpdatedBy")
-  createdModalities     Modality[]              @relation("ModalityCreatedBy")
-  updatedModalities     Modality[]              @relation("ModalityUpdatedBy")
-  createdAcademicLevels AcademicLevel[]         @relation("AcademicLevelCreatedBy")
-  updatedAcademicLevels AcademicLevel[]         @relation("AcademicLevelUpdatedBy")
+  id                     String                  @id @default(uuid())
+  name                   String
+  email                  String                  @unique
+  passwordHash           String
+  role                   UserRole                @default(READ_ONLY)
+  active                 Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  payments               Payment[]
+  followUps              FollowUp[]
+  auditLogs              AuditLog[]
+  reEnrollments          ReEnrollment[]
+  academicEvents         AcademicCalendarEvent[]
+  createdGroups          Group[]                 @relation("GroupCreatedBy")
+  updatedGroups          Group[]                 @relation("GroupUpdatedBy")
+  createdModalities      Modality[]              @relation("ModalityCreatedBy")
+  updatedModalities      Modality[]              @relation("ModalityUpdatedBy")
+  createdAcademicLevels  AcademicLevel[]         @relation("AcademicLevelCreatedBy")
+  updatedAcademicLevels  AcademicLevel[]         @relation("AcademicLevelUpdatedBy")
+  createdSchoolCycles    SchoolCycle[]           @relation("SchoolCycleCreatedBy")
+  updatedSchoolCycles    SchoolCycle[]           @relation("SchoolCycleUpdatedBy")
+  createdAcademicPeriods AcademicPeriod[]        @relation("AcademicPeriodCreatedBy")
+  updatedAcademicPeriods AcademicPeriod[]        @relation("AcademicPeriodUpdatedBy")
 
   @@index([role])
 }
@@ -411,18 +415,29 @@ model AuditLog {
 
 model SchoolCycle {
   id             String                  @id @default(uuid())
-  name           String                  @unique
+  name           String
+  code           String?
+  description    String?
   startDate      DateTime
   endDate        DateTime
   isActive       Boolean                 @default(true)
+  isCurrent      Boolean                 @default(false)
+  createdById    String?
+  updatedById    String?
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
+  createdBy      User?                   @relation("SchoolCycleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy      User?                   @relation("SchoolCycleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   periods        AcademicPeriod[]
   enrollments    Enrollment[]
   reEnrollments  ReEnrollment[]
   academicEvents AcademicCalendarEvent[]
 
-  @@index([isActive])
+  @@index([isActive, startDate])
+  @@index([isCurrent])
+  @@index([isActive, code])
+  @@index([createdById])
+  @@index([updatedById])
   @@index([startDate, endDate])
 }
 
@@ -430,19 +445,28 @@ model AcademicPeriod {
   id                  String                  @id @default(uuid())
   schoolCycleId       String
   name                String
+  code                String?
+  description         String?
+  displayOrder        Int                     @default(1)
   startDate           DateTime
   endDate             DateTime
   isActive            Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   schoolCycle         SchoolCycle             @relation(fields: [schoolCycleId], references: [id], onDelete: Restrict)
+  createdBy           User?                   @relation("AcademicPeriodCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("AcademicPeriodUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   enrollments         Enrollment[]
   reEnrollments       ReEnrollment[]
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
 
-  @@unique([schoolCycleId, name])
-  @@index([schoolCycleId, isActive])
+  @@index([schoolCycleId, isActive, displayOrder])
+  @@index([schoolCycleId, isActive, code])
+  @@index([createdById])
+  @@index([updatedById])
   @@index([startDate, endDate])
 }
 

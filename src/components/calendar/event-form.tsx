@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-type Option = { id: string; name: string };
+type Option = { id: string; name: string; schoolCycleId?: string };
 
 type EventFormProps = {
   schoolCycles: Option[];
@@ -22,11 +22,21 @@ export function EventForm({
   classrooms
 }: EventFormProps) {
   const [message, setMessage] = useState("");
+  const [selectedSchoolCycleId, setSelectedSchoolCycleId] = useState("");
+  const [selectedAcademicPeriodId, setSelectedAcademicPeriodId] = useState("");
+  const filteredAcademicPeriods = useMemo(
+    () =>
+      selectedSchoolCycleId
+        ? academicPeriods.filter((period) => period.schoolCycleId === selectedSchoolCycleId)
+        : [],
+    [academicPeriods, selectedSchoolCycleId]
+  );
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     const response = await fetch("/api/academic-calendar/events", {
       method: "POST",
@@ -46,7 +56,9 @@ export function EventForm({
     }
 
     setMessage("Evento creado. Actualiza la pagina para verlo en el calendario.");
-    event.currentTarget.reset();
+    setSelectedSchoolCycleId("");
+    setSelectedAcademicPeriodId("");
+    form.reset();
   }
 
   return (
@@ -98,9 +110,42 @@ export function EventForm({
           required
           className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
         />
+        <select
+          name="schoolCycleId"
+          value={selectedSchoolCycleId}
+          onChange={(event) => {
+            const nextCycleId = event.target.value;
+            setSelectedSchoolCycleId(nextCycleId);
+            const selectedPeriod = academicPeriods.find(
+              (period) => period.id === selectedAcademicPeriodId
+            );
+            if (!selectedPeriod || selectedPeriod.schoolCycleId !== nextCycleId) {
+              setSelectedAcademicPeriodId("");
+            }
+          }}
+          className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+        >
+          <option value="">Ciclo</option>
+          {schoolCycles.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="academicPeriodId"
+          value={selectedAcademicPeriodId}
+          onChange={(event) => setSelectedAcademicPeriodId(event.target.value)}
+          className="focus-ring h-11 rounded-lg border border-line px-3 text-sm"
+        >
+          <option value="">Periodo</option>
+          {filteredAcademicPeriods.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
         {[
-          ["schoolCycleId", "Ciclo", schoolCycles],
-          ["academicPeriodId", "Periodo", academicPeriods],
           ["groupId", "Grupo", groups],
           ["subjectId", "Materia", subjects],
           ["teacherId", "Docente", teachers],

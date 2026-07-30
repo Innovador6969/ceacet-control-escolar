@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BarChart3,
   CalendarDays,
+  CalendarRange,
   FileText,
   GraduationCap,
   Home,
@@ -22,6 +23,8 @@ const navigation = [
   { href: "/registrar-alumno", label: "Registrar alumno", icon: PlusCircle },
   { href: "/pagos", label: "Pagos", icon: Landmark },
   { href: "/calendario-academico", label: "Calendario academico", icon: CalendarDays },
+  { href: "/configuracion-academica/ciclos-escolares", label: "Ciclos escolares", icon: CalendarRange },
+  { href: "/configuracion-academica/periodos-academicos", label: "Periodos academicos", icon: CalendarDays },
   { href: "/configuracion-academica/niveles-academicos", label: "Niveles academicos", icon: GraduationCap },
   { href: "/configuracion-academica/modalidades", label: "Modalidades", icon: School },
   { href: "/configuracion-academica/grupos", label: "Grupos", icon: Layers3 },
