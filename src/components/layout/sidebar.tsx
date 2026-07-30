@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   BarChart3,
+  BookOpen,
   CalendarDays,
   CalendarRange,
   FileText,
@@ -10,9 +11,11 @@ import {
   Home,
   Landmark,
   Layers3,
+  MapPin,
   PlusCircle,
   School,
   Settings,
+  UserRound,
   UsersRound
 } from "lucide-react";
 import { NavigationLink } from "./navigation-link";
@@ -28,6 +31,9 @@ const navigation = [
   { href: "/configuracion-academica/niveles-academicos", label: "Niveles academicos", icon: GraduationCap },
   { href: "/configuracion-academica/modalidades", label: "Modalidades", icon: School },
   { href: "/configuracion-academica/grupos", label: "Grupos", icon: Layers3 },
+  { href: "/configuracion-academica/materias", label: "Materias", icon: BookOpen },
+  { href: "/configuracion-academica/docentes", label: "Docentes", icon: UserRound },
+  { href: "/configuracion-academica/aulas", label: "Aulas", icon: MapPin },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/configuracion", label: "Configuracion", icon: Settings }

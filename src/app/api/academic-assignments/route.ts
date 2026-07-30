@@ -1,10 +1,18 @@
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { createAcademicAssignment } from "@/lib/services/academic-calendar";
 
 export async function POST(request: Request) {
-  await requireUser();
+  const user = await requireUser();
+
+  if (user.role === UserRole.READ_ONLY) {
+    return NextResponse.json(
+      { message: "No tienes permisos para crear asignaciones academicas." },
+      { status: 403 }
+    );
+  }
 
   try {
     const payload = await request.json();

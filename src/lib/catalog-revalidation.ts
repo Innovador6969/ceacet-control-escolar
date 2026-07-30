@@ -86,3 +86,36 @@ export function revalidateAcademicPeriodCatalogPaths(id?: string) {
     revalidatePath(`/configuracion-academica/periodos-academicos/${id}`);
   }
 }
+
+export function revalidateSubjectCatalogPaths(id?: string) {
+  revalidateMany([
+    "/configuracion-academica/materias",
+    "/calendario-academico/asignaciones"
+  ]);
+
+  if (id) {
+    revalidatePath(`/configuracion-academica/materias/${id}`);
+  }
+}
+
+export function revalidateTeacherCatalogPaths(id?: string) {
+  revalidateMany([
+    "/configuracion-academica/docentes",
+    "/calendario-academico/asignaciones"
+  ]);
+
+  if (id) {
+    revalidatePath(`/configuracion-academica/docentes/${id}`);
+  }
+}
+
+export function revalidateClassroomCatalogPaths(id?: string) {
+  revalidateMany([
+    "/configuracion-academica/aulas",
+    "/calendario-academico/asignaciones"
+  ]);
+
+  if (id) {
+    revalidatePath(`/configuracion-academica/aulas/${id}`);
+  }
+}

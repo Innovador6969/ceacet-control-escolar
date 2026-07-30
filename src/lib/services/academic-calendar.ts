@@ -2,10 +2,11 @@ import { AcademicEventType, Prisma, Weekday } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatGroupLabel } from "@/lib/labels";
 import { getActiveAcademicPeriods } from "@/lib/services/academic-periods";
-import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
+import { getActiveClassrooms } from "@/lib/services/classrooms";
 import { getActiveGroups, groupLabelSelect } from "@/lib/services/groups";
-import { getActiveModalities } from "@/lib/services/modalities";
 import { getActiveSchoolCycles } from "@/lib/services/school-cycles";
+import { getActiveSubjects } from "@/lib/services/subjects";
+import { getActiveTeachers } from "@/lib/services/teachers";
 import {
   academicAssignmentSchema,
   calendarEventSchema,
@@ -41,8 +42,6 @@ export async function getCalendarModuleData() {
   const [
     schoolCycles,
     academicPeriods,
-    academicLevels,
-    modalities,
     groups,
     subjects,
     teachers,
@@ -52,12 +51,10 @@ export async function getCalendarModuleData() {
   ] = await Promise.all([
     getActiveSchoolCycles(),
     getActiveAcademicPeriods(),
-    getActiveAcademicLevels(),
-    getActiveModalities(),
     getActiveGroups(),
-    prisma.subject.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.teacher.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.classroom.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    getActiveSubjects(),
+    getActiveTeachers(),
+    getActiveClassrooms(),
     prisma.academicCalendarEvent.findMany({
       include: {
         schoolCycle: true,
@@ -86,8 +83,6 @@ export async function getCalendarModuleData() {
   return {
     schoolCycles,
     academicPeriods,
-    academicLevels,
-    modalities,
     groups,
     subjects,
     teachers,
@@ -232,6 +227,37 @@ export async function createAcademicAssignment(input: AcademicAssignmentInput) {
     if (!period.isActive || !period.schoolCycle.isActive) {
       throw new Error("El periodo academico seleccionado esta inactivo.");
     }
+    const [subject, group, teacher, classroom] = await Promise.all([
+      tx.subject.findUniqueOrThrow({
+        where: { id: data.subjectId },
+        select: { active: true, academicLevelId: true, modalityId: true }
+      }),
+      tx.group.findUniqueOrThrow({
+        where: { id: data.groupId },
+        select: { active: true, academicLevelId: true, modalityId: true }
+      }),
+      tx.teacher.findUniqueOrThrow({
+        where: { id: data.teacherId },
+        select: { active: true }
+      }),
+      data.classroomId
+        ? tx.classroom.findUniqueOrThrow({
+            where: { id: data.classroomId },
+            select: { active: true }
+          })
+        : Promise.resolve(null)
+    ]);
+
+    if (!subject.active) throw new Error("La materia seleccionada esta inactiva.");
+    if (!group.active) throw new Error("El grupo seleccionado esta inactivo.");
+    if (!teacher.active) throw new Error("El docente seleccionado esta inactivo.");
+    if (classroom && !classroom.active) throw new Error("El aula seleccionada esta inactiva.");
+    if (
+      subject.academicLevelId !== group.academicLevelId ||
+      (subject.modalityId && subject.modalityId !== group.modalityId)
+    ) {
+      throw new Error("La materia seleccionada no corresponde al contexto academico.");
+    }
     const rules = data.rules.map((rule) => ({
       weekday: rule.weekday,
       startTime: rule.startTime,
@@ -255,8 +281,8 @@ export async function createAcademicAssignment(input: AcademicAssignmentInput) {
         teacherId: data.teacherId,
         classroomId: data.classroomId,
         academicPeriodId: data.academicPeriodId,
-        academicLevelId: data.academicLevelId,
-        modalityId: data.modalityId,
+        academicLevelId: group.academicLevelId,
+        modalityId: group.modalityId,
         scheduleRules: {
           create: rules
         }

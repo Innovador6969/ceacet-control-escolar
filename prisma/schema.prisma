@@ -134,6 +134,12 @@ model User {
   updatedSchoolCycles    SchoolCycle[]           @relation("SchoolCycleUpdatedBy")
   createdAcademicPeriods AcademicPeriod[]        @relation("AcademicPeriodCreatedBy")
   updatedAcademicPeriods AcademicPeriod[]        @relation("AcademicPeriodUpdatedBy")
+  createdSubjects        Subject[]               @relation("SubjectCreatedBy")
+  updatedSubjects        Subject[]               @relation("SubjectUpdatedBy")
+  createdTeachers        Teacher[]               @relation("TeacherCreatedBy")
+  updatedTeachers        Teacher[]               @relation("TeacherUpdatedBy")
+  createdClassrooms      Classroom[]             @relation("ClassroomCreatedBy")
+  updatedClassrooms      Classroom[]             @relation("ClassroomUpdatedBy")
 
   @@index([role])
 }
@@ -504,41 +510,71 @@ model ReEnrollment {
 model Subject {
   id                  String                  @id @default(uuid())
   name                String
-  code                String                  @unique
+  code                String
+  description         String?
   academicLevelId     String
   modalityId          String?
   active              Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
   academicLevel       AcademicLevel           @relation(fields: [academicLevelId], references: [id])
   modality            Modality?               @relation(fields: [modalityId], references: [id])
+  createdBy           User?                   @relation("SubjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("SubjectUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
 
   @@index([academicLevelId, modalityId])
   @@index([active])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model Teacher {
   id                  String                  @id @default(uuid())
   name                String
-  email               String?                 @unique
+  code                String?
+  email               String?
   phone               String?
+  specialty           String?
+  description         String?
   active              Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  createdBy           User?                   @relation("TeacherCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("TeacherUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
 
   @@index([active])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model Classroom {
   id                  String                  @id @default(uuid())
-  name                String                  @unique
+  name                String
+  code                String?
   location            String?
   capacity            Int?
+  description         String?
   active              Boolean                 @default(true)
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  createdBy           User?                   @relation("ClassroomCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                   @relation("ClassroomUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   academicAssignments AcademicAssignment[]
   academicEvents      AcademicCalendarEvent[]
 
   @@index([active])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model AcademicAssignment {

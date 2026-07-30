@@ -33,7 +33,9 @@ export default async function AcademicAssignmentsPage() {
         subjects={data.subjects.map((item) => ({ id: item.id, name: item.name }))}
         groups={data.groups.map((item) => ({
           id: item.id,
-          name: formatGroupLabel(item)
+          name: formatGroupLabel(item),
+          academicLevel: { name: item.academicLevel.name },
+          modality: { name: item.modality.name }
         }))}
         teachers={data.teachers.map((item) => ({ id: item.id, name: item.name }))}
         classrooms={data.classrooms.map((item) => ({ id: item.id, name: item.name }))}
@@ -41,11 +43,6 @@ export default async function AcademicAssignmentsPage() {
           id: item.id,
           name: `${item.name} (${item.schoolCycle.name})`
         }))}
-        academicLevels={data.academicLevels.map((item) => ({
-          id: item.id,
-          name: item.name
-        }))}
-        modalities={data.modalities.map((item) => ({ id: item.id, name: item.name }))}
       />
       <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
         <h3 className="text-base font-bold text-ink">Asignaciones existentes</h3>

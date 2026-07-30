@@ -49,6 +49,24 @@ export default async function SettingsPage() {
       >
         Administrar modalidades
       </Link>
+      <Link
+        href="/configuracion-academica/materias"
+        className="focus-ring inline-flex h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-ink shadow-sm transition hover:bg-surface"
+      >
+        Administrar materias
+      </Link>
+      <Link
+        href="/configuracion-academica/docentes"
+        className="focus-ring inline-flex h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-ink shadow-sm transition hover:bg-surface"
+      >
+        Administrar docentes
+      </Link>
+      <Link
+        href="/configuracion-academica/aulas"
+        className="focus-ring inline-flex h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-ink shadow-sm transition hover:bg-surface"
+      >
+        Administrar aulas
+      </Link>
     </div>
   );
 }

@@ -49,8 +49,6 @@ export const academicAssignmentSchema = z.object({
   teacherId: requiredText("Selecciona un docente"),
   classroomId: optionalText,
   academicPeriodId: requiredText("Selecciona un periodo"),
-  academicLevelId: requiredText("Selecciona un nivel"),
-  modalityId: requiredText("Selecciona un programa"),
   rules: z
     .array(
       z.object({

@@ -5,7 +5,10 @@ export const catalogAuditEntities = [
   "Modality",
   "Group",
   "SchoolCycle",
-  "AcademicPeriod"
+  "AcademicPeriod",
+  "Subject",
+  "Teacher",
+  "Classroom"
 ] as const;
 
 export type CatalogAuditEntity = (typeof catalogAuditEntities)[number];
