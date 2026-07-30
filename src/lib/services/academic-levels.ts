@@ -1,9 +1,11 @@
 import { Prisma } from "@prisma/client";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import {
   academicLevelSchema,
   type AcademicLevelInput
 } from "@/lib/validations/academic-level";
+import { normalizeCatalogName } from "@/lib/validation/catalog-normalization";
 
 export const academicLevelLabelSelect = {
   id: true,
@@ -44,7 +46,7 @@ type AcademicLevelSnapshot = {
 const editableFields = ["code", "name", "description", "displayOrder", "active"] as const;
 
 export function normalizeAcademicLevelName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
+  return normalizeCatalogName(value);
 }
 
 function snapshot(level: AcademicLevelSnapshot) {
@@ -64,18 +66,28 @@ function changedFields(previousData: AcademicLevelSnapshot, newData: AcademicLev
   return editableFields.filter((field) => previous[field] !== next[field]);
 }
 
-export async function getActiveAcademicLevels() {
+export const getActiveAcademicLevels = cache(async () => {
   return prisma.academicLevel.findMany({
     where: { active: true },
     select: academicLevelLabelSelect,
     orderBy: [{ displayOrder: "asc" }, { name: "asc" }]
   });
-}
+});
 
 export async function getAcademicLevels() {
   const [levels, activeModalityCounts, activeGroupCounts] = await Promise.all([
     prisma.academicLevel.findMany({
-      include: academicLevelDetailInclude,
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        description: true,
+        displayOrder: true,
+        active: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+        _count: { select: academicLevelCounts }
+      },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }]
     }),
     prisma.modality.groupBy({
@@ -135,14 +147,6 @@ export async function getAcademicLevelById(id: string) {
   ]);
 
   return { ...level, activeModalityCount, activeGroupCount };
-}
-
-export async function getAcademicLevelAuditHistory(id: string) {
-  return prisma.auditLog.findMany({
-    where: { entity: "AcademicLevel", entityId: id },
-    include: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { createdAt: "desc" }
-  });
 }
 
 export async function getAcademicLevelDependencies(id: string) {

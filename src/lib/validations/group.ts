@@ -1,9 +1,14 @@
 import { z } from "zod";
+import {
+  normalizeCatalogCode,
+  normalizeOptionalCatalogCode,
+  normalizeOptionalText
+} from "@/lib/validation/catalog-normalization";
 
 const optionalText = z
   .string()
   .trim()
-  .transform((value) => (value === "" ? undefined : value))
+  .transform(normalizeOptionalText)
   .optional();
 
 const requiredUpperText = (message: string) =>
@@ -11,15 +16,12 @@ const requiredUpperText = (message: string) =>
     .string()
     .trim()
     .min(1, { message })
-    .transform((value) => value.toUpperCase());
+    .transform(normalizeCatalogCode);
 
 const optionalUpperText = z
   .string()
   .trim()
-  .transform((value) => {
-    if (value === "") return undefined;
-    return value.toUpperCase();
-  })
+  .transform(normalizeOptionalCatalogCode)
   .optional();
 
 const optionalCapacity = z.coerce

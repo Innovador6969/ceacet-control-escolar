@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
 import { ModalityAuditHistory } from "@/components/modalities/modality-audit-history";
 import { ModalityForm } from "@/components/modalities/modality-form";
 import { ModalityMetadata } from "@/components/modalities/modality-metadata";
 import { requireUser } from "@/lib/auth/session";
+import { countCatalogAuditEntries } from "@/lib/services/catalog-audit";
 import {
-  getModalityAuditHistory,
   getModalityById,
   getModalityFormCatalogs
 } from "@/lib/services/modalities";
@@ -21,9 +21,9 @@ export default async function ModalityDetailPage({
 }: ModalityDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
-  const [modality, auditHistory] = await Promise.all([
+  const [modality, auditCount] = await Promise.all([
     getModalityById(id),
-    getModalityAuditHistory(id)
+    countCatalogAuditEntries("Modality", id)
   ]);
 
   if (!modality) {
@@ -52,9 +52,11 @@ export default async function ModalityDetailPage({
             {modality.description ?? "Sin descripcion registrada."}
           </p>
         </div>
-        <Badge tone={modality.active ? "green" : "gray"}>
-          {modality.active ? "Activa" : "Inactiva"}
-        </Badge>
+        <CatalogStatusBadge
+          active={modality.active}
+          activeLabel="Activa"
+          inactiveLabel="Inactiva"
+        />
       </div>
       <ModalityForm
         modality={modality}
@@ -72,9 +74,7 @@ export default async function ModalityDetailPage({
                   {group.schedule ?? "Sin horario"} · Capacidad {group.capacity ?? "sin limite"}
                 </p>
               </div>
-              <Badge tone={group.active ? "green" : "gray"}>
-                {group.active ? "Activo" : "Inactivo"}
-              </Badge>
+              <CatalogStatusBadge active={group.active} />
             </div>
           ))}
           {modality.groups.length === 0 ? (
@@ -85,7 +85,7 @@ export default async function ModalityDetailPage({
         </div>
       </section>
       <ModalityMetadata modality={modality} />
-      <ModalityAuditHistory entries={auditHistory} />
+      <ModalityAuditHistory modalityId={modality.id} count={auditCount} />
     </div>
   );
 }

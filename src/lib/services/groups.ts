@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
 import { getActiveModalities, modalityLabelSelect } from "@/lib/services/modalities";
@@ -64,7 +65,7 @@ const editableFields = [
   "active"
 ] as const;
 
-export async function getActiveGroups() {
+export const getActiveGroups = cache(async () => {
   return prisma.group.findMany({
     where: { active: true },
     select: groupLabelSelect,
@@ -74,11 +75,24 @@ export async function getActiveGroups() {
       { name: "asc" }
     ]
   });
-}
+});
 
 export async function getGroups() {
   return prisma.group.findMany({
-    include: groupDetailInclude,
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      description: true,
+      schedule: true,
+      capacity: true,
+      active: true,
+      updatedAt: true,
+      academicLevel: { select: { id: true, name: true } },
+      modality: { select: { id: true, name: true } },
+      updatedBy: { select: { name: true } },
+      _count: { select: groupCounts }
+    },
     orderBy: [
       { academicLevel: { name: "asc" } },
       { modality: { name: "asc" } },
@@ -133,14 +147,6 @@ export async function getGroupById(id: string) {
   return prisma.group.findUnique({
     where: { id },
     include: groupDetailInclude
-  });
-}
-
-export async function getGroupAuditHistory(id: string) {
-  return prisma.auditLog.findMany({
-    where: { entity: "Group", entityId: id },
-    include: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { createdAt: "desc" }
   });
 }
 

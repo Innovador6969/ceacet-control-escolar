@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-type AcademicLevelOption = {
-  id: string;
-  name: string;
-};
+import type { AcademicLevelOption } from "@/lib/types/catalog";
 
 type ModalityFormData = {
   id?: string;
@@ -64,11 +60,13 @@ export function ModalityForm({
     }
 
     setMessage("Modalidad guardada correctamente.");
-    router.refresh();
 
     if (!modality?.id && result?.id) {
       router.push(`/configuracion-academica/modalidades/${result.id}`);
+      return;
     }
+
+    router.refresh();
   }
 
   return (

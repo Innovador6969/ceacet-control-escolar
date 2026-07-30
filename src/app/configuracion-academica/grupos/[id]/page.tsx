@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
 import { GroupAuditHistory } from "@/components/groups/group-audit-history";
 import { GroupForm } from "@/components/groups/group-form";
 import { GroupMetadata } from "@/components/groups/group-metadata";
-import { Badge } from "@/components/ui/badge";
 import { requireUser } from "@/lib/auth/session";
 import { formatGroupLabel } from "@/lib/labels";
+import { countCatalogAuditEntries } from "@/lib/services/catalog-audit";
 import {
-  getGroupAuditHistory,
   getGroupById,
   getGroupFormCatalogs
 } from "@/lib/services/groups";
@@ -20,9 +20,9 @@ type GroupDetailPageProps = {
 export default async function GroupDetailPage({ params }: GroupDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
-  const [group, auditHistory] = await Promise.all([
+  const [group, auditCount] = await Promise.all([
     getGroupById(id),
-    getGroupAuditHistory(id)
+    countCatalogAuditEntries("Group", id)
   ]);
 
   if (!group) {
@@ -51,9 +51,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
             {group.description ?? "Sin descripcion registrada."}
           </p>
         </div>
-        <Badge tone={group.active ? "green" : "gray"}>
-          {group.active ? "Activo" : "Inactivo"}
-        </Badge>
+        <CatalogStatusBadge active={group.active} />
       </div>
       <GroupForm
         group={group}
@@ -62,7 +60,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
         canManage={canManage}
       />
       <GroupMetadata group={group} />
-      <GroupAuditHistory entries={auditHistory} />
+      <GroupAuditHistory groupId={group.id} count={auditCount} />
     </div>
   );
 }

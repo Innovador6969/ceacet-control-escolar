@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { CatalogEmptyState } from "@/components/catalog/catalog-empty-state";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
+import { CatalogStatusDialog } from "@/components/catalog/catalog-status-dialog";
 import { formatDate } from "@/lib/labels";
 
 type AcademicLevelRow = {
@@ -37,7 +38,6 @@ export function AcademicLevelsTable({
   academicLevels,
   canManage
 }: AcademicLevelsTableProps) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Todos");
   const [message, setMessage] = useState("");
@@ -56,31 +56,6 @@ export function AcademicLevelsTable({
       );
     });
   }, [academicLevels, query, status]);
-
-  async function toggleAcademicLevel(level: AcademicLevelRow) {
-    const action = level.active ? "deactivate" : "activate";
-    const warning = level.active
-      ? `Vas a desactivar el nivel ${level.name}. Tiene ${level._count.modalities} modalidad(es), ${level._count.groups} grupo(s), ${level._count.enrollments} inscripcion(es) y ${level._count.reEnrollments} reinscripcion(es).`
-      : `Vas a activar el nivel ${level.name}.`;
-
-    if (!window.confirm(warning)) return;
-
-    setMessage("");
-    const response = await fetch(`/api/academic-levels/${level.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ operation: action })
-    });
-    const result = (await response.json().catch(() => null)) as { message?: string } | null;
-
-    if (!response.ok) {
-      setMessage(result?.message ?? "No fue posible actualizar el estado.");
-      return;
-    }
-
-    setMessage("Estado del nivel academico actualizado.");
-    router.refresh();
-  }
 
   return (
     <div className="space-y-4">
@@ -141,9 +116,7 @@ export function AcademicLevelsTable({
                   <td className="px-4 py-4 text-sm text-muted">{level._count.groups}</td>
                   <td className="px-4 py-4 text-sm text-muted">{level.activeGroupCount}</td>
                   <td className="px-4 py-4">
-                    <Badge tone={level.active ? "green" : "gray"}>
-                      {level.active ? "Activo" : "Inactivo"}
-                    </Badge>
+                    <CatalogStatusBadge active={level.active} />
                   </td>
                   <td className="px-4 py-4 text-sm text-muted">{formatDate(level.updatedAt)}</td>
                   <td className="px-4 py-4 text-sm text-muted">{level.updatedBy?.name ?? "Registro anterior al modulo"}</td>
@@ -153,13 +126,19 @@ export function AcademicLevelsTable({
                         Ver
                       </Link>
                       {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleAcademicLevel(level)}
-                          className="text-sm font-bold text-ink"
-                        >
-                          {level.active ? "Desactivar" : "Activar"}
-                        </button>
+                        <CatalogStatusDialog
+                          endpoint={`/api/academic-levels/${level.id}`}
+                          active={level.active}
+                          title={`${level.active ? "Desactivar" : "Activar"} nivel academico`}
+                          warning={
+                            level.active
+                              ? `Vas a desactivar el nivel ${level.name}. Tiene ${level._count.modalities} modalidad(es), ${level._count.groups} grupo(s), ${level._count.enrollments} inscripcion(es) y ${level._count.reEnrollments} reinscripcion(es).`
+                              : `Vas a activar el nivel ${level.name}.`
+                          }
+                          successMessage="Estado del nivel academico actualizado."
+                          fallbackErrorMessage="No fue posible actualizar el estado."
+                          onMessage={setMessage}
+                        />
                       ) : null}
                     </div>
                   </td>
@@ -169,9 +148,7 @@ export function AcademicLevelsTable({
           </table>
         </div>
         {filteredLevels.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted">
-            No hay niveles academicos con los filtros seleccionados.
-          </div>
+          <CatalogEmptyState message="No hay niveles academicos con los filtros seleccionados." />
         ) : null}
       </section>
     </div>

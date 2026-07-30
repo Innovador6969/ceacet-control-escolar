@@ -57,11 +57,13 @@ export function AcademicLevelForm({
     }
 
     setMessage("Nivel academico guardado correctamente.");
-    router.refresh();
 
     if (!academicLevel?.id && result?.id) {
       router.push(`/configuracion-academica/niveles-academicos/${result.id}`);
+      return;
     }
+
+    router.refresh();
   }
 
   return (

@@ -2,17 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type AcademicLevelOption = {
-  id: string;
-  name: string;
-};
-
-type ModalityOption = {
-  id: string;
-  name: string;
-  academicLevelId: string;
-};
+import type { AcademicLevelOption, ModalityOption } from "@/lib/types/catalog";
 
 type GroupFormData = {
   id?: string;
@@ -87,11 +77,13 @@ export function GroupForm({
     }
 
     setMessage("Grupo guardado correctamente.");
-    router.refresh();
 
     if (!group?.id && result?.id) {
       router.push(`/configuracion-academica/grupos/${result.id}`);
+      return;
     }
+
+    router.refresh();
   }
 
   return (

@@ -4,10 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import { AcademicLevelAuditHistory } from "@/components/academic-levels/academic-level-audit-history";
 import { AcademicLevelForm } from "@/components/academic-levels/academic-level-form";
 import { AcademicLevelMetadata } from "@/components/academic-levels/academic-level-metadata";
-import { Badge } from "@/components/ui/badge";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
 import { requireUser } from "@/lib/auth/session";
+import { countCatalogAuditEntries } from "@/lib/services/catalog-audit";
 import {
-  getAcademicLevelAuditHistory,
   getAcademicLevelById
 } from "@/lib/services/academic-levels";
 
@@ -20,9 +20,9 @@ export default async function AcademicLevelDetailPage({
 }: AcademicLevelDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
-  const [academicLevel, auditHistory] = await Promise.all([
+  const [academicLevel, auditCount] = await Promise.all([
     getAcademicLevelById(id),
-    getAcademicLevelAuditHistory(id)
+    countCatalogAuditEntries("AcademicLevel", id)
   ]);
 
   if (!academicLevel) {
@@ -50,9 +50,7 @@ export default async function AcademicLevelDetailPage({
             {academicLevel.description ?? "Sin descripcion registrada."}
           </p>
         </div>
-        <Badge tone={academicLevel.active ? "green" : "gray"}>
-          {academicLevel.active ? "Activo" : "Inactivo"}
-        </Badge>
+        <CatalogStatusBadge active={academicLevel.active} />
       </div>
       <AcademicLevelForm academicLevel={academicLevel} canManage={canManage} />
       <section className="grid gap-5 lg:grid-cols-2">
@@ -65,9 +63,11 @@ export default async function AcademicLevelDetailPage({
                   <p className="text-sm font-bold text-ink">{modality.name}</p>
                   <p className="mt-1 text-xs text-muted">{modality.code ?? "Sin codigo"}</p>
                 </div>
-                <Badge tone={modality.active ? "green" : "gray"}>
-                  {modality.active ? "Activa" : "Inactiva"}
-                </Badge>
+                <CatalogStatusBadge
+                  active={modality.active}
+                  activeLabel="Activa"
+                  inactiveLabel="Inactiva"
+                />
               </div>
             ))}
             {academicLevel.modalities.length === 0 ? (
@@ -88,9 +88,7 @@ export default async function AcademicLevelDetailPage({
                     {group.modality.name} - {group.schedule ?? "Sin horario"} - Capacidad {group.capacity ?? "sin limite"}
                   </p>
                 </div>
-                <Badge tone={group.active ? "green" : "gray"}>
-                  {group.active ? "Activo" : "Inactivo"}
-                </Badge>
+                <CatalogStatusBadge active={group.active} />
               </div>
             ))}
             {academicLevel.groups.length === 0 ? (
@@ -102,7 +100,7 @@ export default async function AcademicLevelDetailPage({
         </div>
       </section>
       <AcademicLevelMetadata academicLevel={academicLevel} />
-      <AcademicLevelAuditHistory entries={auditHistory} />
+      <AcademicLevelAuditHistory academicLevelId={academicLevel.id} count={auditCount} />
     </div>
   );
 }

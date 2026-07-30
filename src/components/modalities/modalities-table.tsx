@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { CatalogEmptyState } from "@/components/catalog/catalog-empty-state";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
+import { CatalogStatusDialog } from "@/components/catalog/catalog-status-dialog";
 import { formatDate } from "@/lib/labels";
 
 type ModalityRow = {
@@ -32,7 +33,6 @@ type ModalitiesTableProps = {
 };
 
 export function ModalitiesTable({ modalities, canManage }: ModalitiesTableProps) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("Todos");
   const [status, setStatus] = useState("Todos");
@@ -57,31 +57,6 @@ export function ModalitiesTable({ modalities, canManage }: ModalitiesTableProps)
       );
     });
   }, [level, modalities, query, status]);
-
-  async function toggleModality(modality: ModalityRow) {
-    const action = modality.active ? "deactivate" : "activate";
-    const warning = modality.active
-      ? `Vas a desactivar la modalidad ${modality.name}. Tiene ${modality._count.groups} grupo(s), ${modality._count.enrollments} inscripcion(es) y ${modality._count.reEnrollments} reinscripcion(es).`
-      : `Vas a activar la modalidad ${modality.name}.`;
-
-    if (!window.confirm(warning)) return;
-
-    setMessage("");
-    const response = await fetch(`/api/modalities/${modality.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ operation: action })
-    });
-    const result = (await response.json().catch(() => null)) as { message?: string } | null;
-
-    if (!response.ok) {
-      setMessage(result?.message ?? "No fue posible actualizar el estado.");
-      return;
-    }
-
-    setMessage("Estado de la modalidad actualizado.");
-    router.refresh();
-  }
 
   return (
     <div className="space-y-4">
@@ -151,9 +126,11 @@ export function ModalitiesTable({ modalities, canManage }: ModalitiesTableProps)
                   <td className="px-4 py-4 text-sm font-bold text-ink">{modality.name}</td>
                   <td className="px-4 py-4 text-sm text-muted">{modality.academicLevel.name}</td>
                   <td className="px-4 py-4">
-                    <Badge tone={modality.active ? "green" : "gray"}>
-                      {modality.active ? "Activa" : "Inactiva"}
-                    </Badge>
+                    <CatalogStatusBadge
+                      active={modality.active}
+                      activeLabel="Activa"
+                      inactiveLabel="Inactiva"
+                    />
                   </td>
                   <td className="px-4 py-4 text-sm text-muted">{modality._count.groups}</td>
                   <td className="px-4 py-4 text-sm text-muted">{modality.activeGroupCount}</td>
@@ -168,13 +145,19 @@ export function ModalitiesTable({ modalities, canManage }: ModalitiesTableProps)
                         Ver
                       </Link>
                       {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleModality(modality)}
-                          className="text-sm font-bold text-ink"
-                        >
-                          {modality.active ? "Desactivar" : "Activar"}
-                        </button>
+                        <CatalogStatusDialog
+                          endpoint={`/api/modalities/${modality.id}`}
+                          active={modality.active}
+                          title={`${modality.active ? "Desactivar" : "Activar"} modalidad`}
+                          warning={
+                            modality.active
+                              ? `Vas a desactivar la modalidad ${modality.name}. Tiene ${modality._count.groups} grupo(s), ${modality._count.enrollments} inscripcion(es) y ${modality._count.reEnrollments} reinscripcion(es).`
+                              : `Vas a activar la modalidad ${modality.name}.`
+                          }
+                          successMessage="Estado de la modalidad actualizado."
+                          fallbackErrorMessage="No fue posible actualizar el estado."
+                          onMessage={setMessage}
+                        />
                       ) : null}
                     </div>
                   </td>
@@ -184,9 +167,7 @@ export function ModalitiesTable({ modalities, canManage }: ModalitiesTableProps)
           </table>
         </div>
         {filteredModalities.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted">
-            No hay modalidades con los filtros seleccionados.
-          </div>
+          <CatalogEmptyState message="No hay modalidades con los filtros seleccionados." />
         ) : null}
       </section>
     </div>

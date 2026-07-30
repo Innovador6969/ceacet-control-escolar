@@ -1,7 +1,9 @@
 import { Prisma } from "@prisma/client";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getActiveAcademicLevels } from "@/lib/services/academic-levels";
 import { modalitySchema, type ModalityInput } from "@/lib/validations/modality";
+import { normalizeCatalogName } from "@/lib/validation/catalog-normalization";
 
 export const modalityLabelSelect = {
   id: true,
@@ -47,7 +49,7 @@ type ModalitySnapshot = {
 const editableFields = ["code", "name", "description", "academicLevelId", "active"] as const;
 
 export function normalizeModalityName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
+  return normalizeCatalogName(value);
 }
 
 function snapshot(modality: ModalitySnapshot) {
@@ -67,13 +69,13 @@ function changedFields(previousData: ModalitySnapshot, newData: ModalitySnapshot
   return editableFields.filter((field) => previous[field] !== next[field]);
 }
 
-export async function getActiveModalities() {
+export const getActiveModalities = cache(async () => {
   return prisma.modality.findMany({
     where: { active: true },
     select: modalityLabelSelect,
     orderBy: [{ academicLevel: { name: "asc" } }, { name: "asc" }]
   });
-}
+});
 
 export async function getModalitiesByAcademicLevel(academicLevelId: string) {
   return prisma.modality.findMany({
@@ -85,7 +87,17 @@ export async function getModalitiesByAcademicLevel(academicLevelId: string) {
 
 export async function getModalities() {
   const modalities = await prisma.modality.findMany({
-    include: modalityDetailInclude,
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      description: true,
+      active: true,
+      updatedAt: true,
+      academicLevel: { select: { id: true, name: true } },
+      updatedBy: { select: { name: true } },
+      _count: { select: modalityCounts }
+    },
     orderBy: [{ academicLevel: { name: "asc" } }, { name: "asc" }]
   });
   const activeGroupCounts = await prisma.group.groupBy({
@@ -145,14 +157,6 @@ export async function getModalityFormCatalogs(currentAcademicLevelId?: string) {
   const academicLevels = currentLevel ? [...activeLevels, currentLevel] : activeLevels;
 
   return { academicLevels };
-}
-
-export async function getModalityAuditHistory(id: string) {
-  return prisma.auditLog.findMany({
-    where: { entity: "Modality", entityId: id },
-    include: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { createdAt: "desc" }
-  });
 }
 
 async function validateAcademicLevel(tx: Prisma.TransactionClient, academicLevelId: string) {

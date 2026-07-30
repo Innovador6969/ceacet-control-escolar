@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { CatalogEmptyState } from "@/components/catalog/catalog-empty-state";
+import { CatalogStatusBadge } from "@/components/catalog/catalog-status-badge";
+import { CatalogStatusDialog } from "@/components/catalog/catalog-status-dialog";
 import { formatDate, formatGroupLabel } from "@/lib/labels";
 
 type GroupRow = {
@@ -32,7 +33,6 @@ type GroupsTableProps = {
 };
 
 export function GroupsTable({ groups, canManage }: GroupsTableProps) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("Todos");
   const [modality, setModality] = useState("Todas");
@@ -60,31 +60,6 @@ export function GroupsTable({ groups, canManage }: GroupsTableProps) {
       );
     });
   }, [groups, level, modality, query, status]);
-
-  async function toggleGroup(group: GroupRow) {
-    const action = group.active ? "deactivate" : "activate";
-    const warning = group.active
-      ? `Vas a desactivar el grupo ${formatGroupLabel(group)}. No se modificaran relaciones historicas.`
-      : `Vas a activar el grupo ${formatGroupLabel(group)}.`;
-
-    if (!window.confirm(warning)) return;
-
-    setMessage("");
-    const response = await fetch(`/api/groups/${group.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ operation: action })
-    });
-    const result = (await response.json().catch(() => null)) as { message?: string } | null;
-
-    if (!response.ok) {
-      setMessage(result?.message ?? "No fue posible actualizar el estado del grupo.");
-      return;
-    }
-
-    setMessage("Estado del grupo actualizado.");
-    router.refresh();
-  }
 
   return (
     <div className="space-y-4">
@@ -167,7 +142,7 @@ export function GroupsTable({ groups, canManage }: GroupsTableProps) {
                   <td className="px-4 py-4 text-sm text-muted">{group.schedule ?? "Sin horario"}</td>
                   <td className="px-4 py-4 text-sm text-muted">{group.capacity ?? "Sin limite"}</td>
                   <td className="px-4 py-4">
-                    <Badge tone={group.active ? "green" : "gray"}>{group.active ? "Activo" : "Inactivo"}</Badge>
+                    <CatalogStatusBadge active={group.active} />
                   </td>
                   <td className="px-4 py-4 text-sm text-muted">{group._count.enrollments}</td>
                   <td className="px-4 py-4 text-sm text-muted">{group._count.reEnrollments}</td>
@@ -181,13 +156,19 @@ export function GroupsTable({ groups, canManage }: GroupsTableProps) {
                         Ver
                       </Link>
                       {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleGroup(group)}
-                          className="text-sm font-bold text-ink"
-                        >
-                          {group.active ? "Desactivar" : "Activar"}
-                        </button>
+                        <CatalogStatusDialog
+                          endpoint={`/api/groups/${group.id}`}
+                          active={group.active}
+                          title={`${group.active ? "Desactivar" : "Activar"} grupo`}
+                          warning={
+                            group.active
+                              ? `Vas a desactivar el grupo ${formatGroupLabel(group)}. No se modificaran relaciones historicas.`
+                              : `Vas a activar el grupo ${formatGroupLabel(group)}.`
+                          }
+                          successMessage="Estado del grupo actualizado."
+                          fallbackErrorMessage="No fue posible actualizar el estado del grupo."
+                          onMessage={setMessage}
+                        />
                       ) : null}
                     </div>
                   </td>
@@ -197,9 +178,7 @@ export function GroupsTable({ groups, canManage }: GroupsTableProps) {
           </table>
         </div>
         {filteredGroups.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted">
-            No hay grupos con los filtros seleccionados.
-          </div>
+          <CatalogEmptyState message="No hay grupos con los filtros seleccionados." />
         ) : null}
       </section>
     </div>

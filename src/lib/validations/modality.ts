@@ -1,15 +1,19 @@
 import { z } from "zod";
+import {
+  normalizeOptionalCatalogCode,
+  normalizeOptionalText
+} from "@/lib/validation/catalog-normalization";
 
 const optionalText = z
   .string()
   .trim()
-  .transform((value) => (value === "" ? undefined : value))
+  .transform(normalizeOptionalText)
   .optional();
 
 const optionalUpperText = z
   .string()
   .trim()
-  .transform((value) => (value === "" ? undefined : value.toUpperCase()))
+  .transform(normalizeOptionalCatalogCode)
   .optional();
 
 export const modalitySchema = z.object({
