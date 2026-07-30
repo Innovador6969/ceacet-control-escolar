@@ -3,10 +3,15 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Option = {
+type AcademicLevelOption = {
   id: string;
   name: string;
-  academicLevelId?: string;
+};
+
+type ModalityOption = {
+  id: string;
+  name: string;
+  academicLevelId: string;
 };
 
 type GroupFormData = {
@@ -23,8 +28,8 @@ type GroupFormData = {
 
 type GroupFormProps = {
   group?: GroupFormData;
-  academicLevels: Option[];
-  modalities: Option[];
+  academicLevels: AcademicLevelOption[];
+  modalities: ModalityOption[];
   canManage: boolean;
 };
 
@@ -36,12 +41,15 @@ export function GroupForm({
 }: GroupFormProps) {
   const router = useRouter();
   const [selectedLevel, setSelectedLevel] = useState(group?.academicLevelId ?? "");
+  const [selectedModality, setSelectedModality] = useState(group?.modalityId ?? "");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const filteredModalities = useMemo(
     () =>
       modalities.filter(
-        (modality) => !selectedLevel || modality.academicLevelId === selectedLevel
+        (modality) =>
+          Boolean(modality.academicLevelId) &&
+          (!selectedLevel || modality.academicLevelId === selectedLevel)
       ),
     [modalities, selectedLevel]
   );
@@ -55,7 +63,7 @@ export function GroupForm({
       code: formData.get("code"),
       name: formData.get("name"),
       academicLevelId: formData.get("academicLevelId"),
-      modalityId: formData.get("modalityId"),
+      modalityId: selectedModality,
       schedule: formData.get("schedule"),
       capacity: formData.get("capacity"),
       description: formData.get("description"),
@@ -123,7 +131,21 @@ export function GroupForm({
           name="academicLevelId"
           required
           value={selectedLevel}
-          onChange={(event) => setSelectedLevel(event.target.value)}
+          onChange={(event) => {
+            const nextLevel = event.target.value;
+            setSelectedLevel(nextLevel);
+
+            if (
+              selectedModality &&
+              !modalities.some(
+                (modality) =>
+                  modality.id === selectedModality &&
+                  modality.academicLevelId === nextLevel
+              )
+            ) {
+              setSelectedModality("");
+            }
+          }}
           disabled={!canManage}
           className="focus-ring h-11 rounded-lg border border-line px-3 text-sm disabled:bg-surface"
         >
@@ -137,11 +159,12 @@ export function GroupForm({
         <select
           name="modalityId"
           required
-          defaultValue={group?.modalityId ?? ""}
+          value={selectedModality}
+          onChange={(event) => setSelectedModality(event.target.value)}
           disabled={!canManage}
           className="focus-ring h-11 rounded-lg border border-line px-3 text-sm disabled:bg-surface"
         >
-          <option value="">Modalidad</option>
+          <option value="">Seleccione una modalidad...</option>
           {filteredModalities.map((modality) => (
             <option key={modality.id} value={modality.id}>
               {modality.name}
