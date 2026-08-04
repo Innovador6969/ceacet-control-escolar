@@ -48,6 +48,8 @@ export const studentRegistrationSchema = z.object({
   academicLevelId: requiredText("El nivel es obligatorio"),
   modalityId: requiredText("La modalidad es obligatoria"),
   groupId: optionalText,
+  schoolCycleId: optionalText,
+  academicPeriodId: optionalText,
   grade: optionalText,
   fourMonthPeriod: optionalNumber,
   enrollmentDate: requiredText("La fecha de inscripcion es obligatoria"),
@@ -56,7 +58,50 @@ export const studentRegistrationSchema = z.object({
   weeklyFee: optionalNumber,
   lateFeePercentage: optionalNumber,
   paymentDay: optionalNumber,
-  observations: optionalText
+  observations: optionalText,
+  guardianFullName: optionalText,
+  guardianRelationship: optionalText,
+  guardianPrimaryPhone: optionalText.refine(
+    (value) => !value || /^[0-9+\-\s()]{7,20}$/.test(value),
+    "Captura un telefono valido"
+  ),
+  guardianAlternatePhone: optionalText.refine(
+    (value) => !value || /^[0-9+\-\s()]{7,20}$/.test(value),
+    "Captura un telefono valido"
+  ),
+  guardianEmail: optionalText.refine(
+    (value) => !value || z.string().email().safeParse(value).success,
+    "Captura un correo valido"
+  ),
+  guardianObservations: optionalText,
+  previousAcademicLevelId: optionalText,
+  previousSchool: optionalText,
+  lastGrade: optionalText,
+  previousSchoolCycle: optionalText,
+  academicBackgroundObservations: optionalText,
+  documents: z
+    .array(
+      z.object({
+        id: optionalText,
+        documentTypeId: requiredText("Selecciona el tipo de documento"),
+        academicLevelId: optionalText,
+        grade: optionalText,
+        status: z
+          .enum(["PENDING", "RECEIVED", "REVIEW", "REJECTED"])
+          .default("PENDING"),
+        receivedAt: optionalText,
+        physicalLocation: optionalText,
+        fileUrl: optionalText,
+        observations: optionalText
+      })
+    )
+    .default([])
 });
 
 export type StudentRegistrationInput = z.infer<typeof studentRegistrationSchema>;
+
+export const studentUpdateSchema = studentRegistrationSchema.extend({
+  enrollmentNumber: optionalText
+});
+
+export type StudentUpdateInput = z.infer<typeof studentUpdateSchema>;

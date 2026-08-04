@@ -145,13 +145,13 @@ model User {
 }
 
 model Student {
-  id                   String               @id @default(uuid())
-  enrollmentNumber     String               @unique
+  id                   String                     @id @default(uuid())
+  enrollmentNumber     String                     @unique
   firstName            String
   paternalLastName     String
   maternalLastName     String?
   birthDate            DateTime?
-  curp                 String?              @unique
+  curp                 String?                    @unique
   sex                  Sex?
   maritalStatus        String?
   occupation           String?
@@ -162,11 +162,13 @@ model Student {
   city                 String?
   state                String?
   postalCode           String?
-  administrativeStatus AdministrativeStatus @default(ACTIVE)
+  administrativeStatus AdministrativeStatus       @default(ACTIVE)
   observations         String?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
   enrollments          Enrollment[]
+  guardian             StudentGuardian?
+  academicBackground   StudentAcademicBackground?
   documents            StudentDocument[]
   payments             Payment[]
   followUps            FollowUp[]
@@ -175,6 +177,36 @@ model Student {
   @@index([paternalLastName, maternalLastName, firstName])
   @@index([administrativeStatus])
   @@index([createdAt])
+}
+
+model StudentGuardian {
+  id             String   @id @default(uuid())
+  studentId      String   @unique
+  fullName       String
+  relationship   String
+  primaryPhone   String
+  alternatePhone String?
+  email          String?
+  observations   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Restrict)
+}
+
+model StudentAcademicBackground {
+  id                      String         @id @default(uuid())
+  studentId               String         @unique
+  previousAcademicLevelId String?
+  previousSchool          String?
+  lastGrade               String?
+  previousSchoolCycle     String?
+  observations            String?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  student                 Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  previousAcademicLevel   AcademicLevel? @relation(fields: [previousAcademicLevelId], references: [id], onDelete: SetNull)
+
+  @@index([previousAcademicLevelId])
 }
 
 model Enrollment {
@@ -214,21 +246,23 @@ model Enrollment {
 }
 
 model AcademicLevel {
-  id                  String                  @id @default(uuid())
+  id                  String                      @id @default(uuid())
   name                String
   code                String?
   description         String?
-  displayOrder        Int                     @default(0)
-  active              Boolean                 @default(true)
+  displayOrder        Int                         @default(0)
+  active              Boolean                     @default(true)
   createdById         String?
   updatedById         String?
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
-  createdBy           User?                   @relation("AcademicLevelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy           User?                   @relation("AcademicLevelUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  createdBy           User?                       @relation("AcademicLevelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                       @relation("AcademicLevelUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   modalities          Modality[]
   groups              Group[]
   enrollments         Enrollment[]
+  academicBackgrounds StudentAcademicBackground[]
+  documentLevels      StudentDocument[]
   reEnrollments       ReEnrollment[]
   subjects            Subject[]
   academicAssignments AcademicAssignment[]
@@ -308,6 +342,8 @@ model StudentDocument {
   id               String         @id @default(uuid())
   studentId        String
   documentTypeId   String
+  academicLevelId  String?
+  grade            String?
   status           DocumentStatus @default(PENDING)
   physicalLocation String?
   fileUrl          String?
@@ -315,8 +351,10 @@ model StudentDocument {
   observations     String?
   student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   documentType     DocumentType   @relation(fields: [documentTypeId], references: [id])
+  academicLevel    AcademicLevel? @relation(fields: [academicLevelId], references: [id], onDelete: SetNull)
 
-  @@unique([studentId, documentTypeId])
+  @@index([studentId, documentTypeId, academicLevelId, grade])
+  @@index([academicLevelId])
   @@index([status])
 }
 

@@ -8,6 +8,7 @@ import {
   Landmark,
   Pencil,
   Phone,
+  Printer,
   WalletCards
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ type StudentDetailPageProps = {
   }>;
   searchParams: Promise<{
     created?: string;
+    updated?: string;
   }>;
 };
 
@@ -66,6 +68,9 @@ export default async function StudentDetailPage({
         </Link>
         {query.created === "1" ? (
           <Badge tone="green">Registro exitoso</Badge>
+        ) : null}
+        {query.updated === "1" ? (
+          <Badge tone="green">Expediente actualizado</Badge>
         ) : null}
       </div>
 
@@ -121,9 +126,9 @@ export default async function StudentDetailPage({
 
       <section className="grid gap-3 md:grid-cols-4">
         {[
-          { href: "#datos", label: "Editar alumno", icon: Pencil },
+          { href: `/alumnos/${student.id}/editar`, label: "Editar alumno", icon: Pencil },
+          { href: `/alumnos/${student.id}/ficha-inscripcion`, label: "Ver ficha", icon: Printer },
           { href: "/pagos", label: "Registrar pago", icon: CreditCard },
-          { href: "/documentos", label: "Ver documentos", icon: FileText },
           { href: "/pagos", label: "Estado de cuenta", icon: WalletCards }
         ].map((action) => (
           <Link
@@ -213,6 +218,68 @@ export default async function StudentDetailPage({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-ink">Tutor</h3>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold text-muted">Nombre</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.guardian?.fullName ?? "Sin tutor registrado"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Parentesco</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.guardian?.relationship ?? "Sin dato"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Telefono principal</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.guardian?.primaryPhone ?? "Sin dato"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Correo</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.guardian?.email ?? "Sin correo"}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-ink">Formacion academica previa</h3>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold text-muted">Nivel anterior</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.academicBackground?.previousAcademicLevel?.name ?? "Sin dato"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Escuela</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.academicBackground?.previousSchool ?? "Sin dato"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Ultimo grado</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.academicBackground?.lastGrade ?? "Sin dato"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Ciclo anterior</dt>
+              <dd className="mt-1 text-sm font-bold text-ink">
+                {student.academicBackground?.previousSchoolCycle ?? "Sin dato"}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
           <h3 className="text-base font-bold text-ink">Datos personales</h3>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
@@ -288,7 +355,11 @@ export default async function StudentDetailPage({
                 key={document.id}
                 className="flex items-center justify-between gap-3 text-sm"
               >
-                <span className="text-muted">{document.documentType.name}</span>
+                <span className="text-muted">
+                  {document.documentType.name}
+                  {document.academicLevel?.name ? ` · ${document.academicLevel.name}` : ""}
+                  {document.grade ? ` · ${document.grade}` : ""}
+                </span>
                 <Badge
                   tone={document.status === "RECEIVED" ? "green" : "yellow"}
                 >

@@ -1,11 +1,18 @@
 import { StudentRegistrationForm } from "@/components/students/student-registration-form";
 import { requireUser } from "@/lib/auth/session";
 import { formatGroupLabel } from "@/lib/labels";
-import { getCatalogs } from "@/lib/services/catalogs";
+import { getStudentFormCatalogs } from "@/lib/services/students";
 
 export default async function RegisterStudentPage() {
   await requireUser();
-  const { academicLevels, modalities, groups } = await getCatalogs();
+  const {
+    academicLevels,
+    modalities,
+    groups,
+    schoolCycles,
+    academicPeriods,
+    documentTypes
+  } = await getStudentFormCatalogs();
 
   return (
     <div className="space-y-5">
@@ -31,6 +38,13 @@ export default async function RegisterStudentPage() {
           academicLevelId: group.academicLevelId,
           modalityId: group.modalityId
         }))}
+        schoolCycles={schoolCycles}
+        academicPeriods={academicPeriods.map((period) => ({
+          id: period.id,
+          name: period.name,
+          schoolCycleId: period.schoolCycleId
+        }))}
+        documentTypes={documentTypes}
       />
     </div>
   );
