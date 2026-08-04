@@ -2,6 +2,26 @@
 
 Aplicacion web para la primera etapa del sistema de control escolar de CEACET. Esta base cubre administracion inicial de alumnos, inscripciones, expedientes, dashboard, catalogos semilla y preparacion para despliegue en Vercel con Neon PostgreSQL y Prisma.
 
+## Documentacion del proyecto
+
+El contexto maestro esta en [docs/00-MASTER_CONTEXT.md](./docs/00-MASTER_CONTEXT.md). Antes de continuar el desarrollo, revisa tambien:
+
+- [Principios del proyecto](./docs/PROJECT_PRINCIPLES.md)
+- [Arquitectura](./docs/01-ARQUITECTURA.md)
+- [Reglas de negocio](./docs/02-REGLAS_DE_NEGOCIO.md)
+- [Estandares de desarrollo](./docs/03-ESTANDARES_DE_DESARROLLO.md)
+- [Roadmap](./docs/04-ROADMAP.md)
+- [Guia para Codex](./docs/05-GUIA_CODEX.md)
+- [Modelo de datos](./docs/06-MODELO_DE_DATOS.md)
+- [Modulos](./docs/07-MODULOS.md)
+- [Auditoria](./docs/08-AUDITORIA.md)
+- [UI/UX](./docs/09-UI_UX.md)
+- [Deploy](./docs/10-DEPLOY.md)
+- [Decisiones arquitectonicas](./docs/DECISIONES.md)
+- [Changelog](./docs/CHANGELOG.md)
+
+No ejecutes migraciones sin revisar antes el SQL generado o versionado en `prisma/migrations/`.
+
 ## Tecnologias
 
 - Next.js con App Router
@@ -70,7 +90,7 @@ npm run dev
 
 La app quedara disponible normalmente en `http://localhost:3000`.
 
-## Credenciales de prueba
+## Credenciales de prueba local
 
 - Administrador: `admin@ceacet.test`
 - Contrasena: `Admin123!`
@@ -79,6 +99,8 @@ Usuario adicional:
 
 - Control escolar: `control@ceacet.test`
 - Contrasena: `Control123!`
+
+Estas credenciales pertenecen al seed local/de prueba y no deben documentarse ni usarse como credenciales de produccion.
 
 ## Comandos disponibles
 
